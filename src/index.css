@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fraunces", "Georgia", serif;
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-script: "Playball", cursive;
+
+  --color-ink: #17140f;
+  --color-ink-soft: #4a463f;
+  --color-paper: #faf8f4;
+  --color-paper-dim: #f2efe8;
+  --color-studio: #eeece7;
+  --color-brand: #b91c2e;
+  --color-brand-dark: #8f1522;
+  --color-brand-light: #d94c3d;
+  --color-bio: #b79c78;
+  --color-bio-dark: #8a7250;
+  --color-bio-paper: #efe8d8;
+  --color-line: #e3ded2;
+
+  --animate-marquee: marquee 32s linear infinite;
+  --animate-fade-up: fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-brand);
+  color: #fff;
+}
+
+.font-script {
+  font-family: var(--font-script);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* The scrollbar gutter sits outside the content box, so it always paints a
+   strip of the html background down the right edge — a light band against the
+   dark Quality/Footer sections, no matter what the track colour is. Removing
+   the scrollbar removes the gutter, letting every section run edge to edge.
+   Scrolling itself (wheel, touch, keyboard, scrollbar drag on trackpads) is
+   unaffected. */
+html {
+  scrollbar-width: none;
+  background: var(--color-paper);
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
