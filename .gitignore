@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment (Supabase / Razorpay keys).
+# Only .env.example is committed, and it holds blank placeholders.
+.env
+.env.local
+.env*.local
+!.env.example

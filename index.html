@@ -1,25 +1,164 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-IN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f2ee" />
+
+    <title>RUSKAV Food Service Products | Trays, Dinnerware &amp; Drinkware, Made in India</title>
     <meta
       name="description"
       content="RUSKAV Food Service Products — India's trusted manufacturer of cafeteria trays, compartment plates, dinnerware, drinkware and bio-composite food service products. FDA-approved, dishwasher & microwave safe, made in India."
     />
-    <title>RUSKAV Food Service Products | Trays, Dinnerware &amp; Drinkware, Made in India</title>
+
+    <!--
+      DEPLOY: this is the one place the live origin is written. Set it to the
+      real domain before going live — og:url, og:image, canonical and the
+      structured data below all read from it, and social previews silently
+      fail on relative or wrong URLs.
+    -->
+    <link rel="canonical" href="https://www.ruskav.com/" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Open Graph: how the site renders when the link is shared, which for
+         this business is mostly WhatsApp. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="RUSKAV Food Service Products" />
+    <meta property="og:title" content="RUSKAV Food Service Products — Trays, Dinnerware & Drinkware" />
+    <meta
+      property="og:description"
+      content="One of India's largest manufacturers of international-quality food service products. FDA-approved, IS 10910 compliant, TÜV Rheinland tested."
+    />
+    <meta property="og:url" content="https://www.ruskav.com/" />
+    <meta property="og:image" content="https://www.ruskav.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Ruskav cafeteria trays, compartment plates and dinnerware." />
+    <meta property="og:locale" content="en_IN" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="RUSKAV Food Service Products — Trays, Dinnerware & Drinkware" />
+    <meta
+      name="twitter:description"
+      content="One of India's largest manufacturers of international-quality food service products. FDA-approved, IS 10910 compliant, TÜV Rheinland tested."
+    />
+    <meta name="twitter:image" content="https://www.ruskav.com/og-image.jpg" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Manrope:wght@400;500;600;700;800&family=Playball&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Manrope:wght@400;500;600;700&family=Playball&display=swap"
       rel="stylesheet"
     />
+
+    <!-- The hero is only on the home page, so its imagery is not preloaded
+         here: a static <link> applies to all twelve routes and would download
+         an unused image on each of them. `useFrameSequence` requests frame 1
+         first and marks it high priority instead, and the phone hero's <img>
+         carries fetchpriority itself. -->
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://www.ruskav.com/#organization",
+            "name": "RUSKAV Food Service Products",
+            "url": "https://www.ruskav.com/",
+            "logo": "https://www.ruskav.com/favicon.svg",
+            "image": "https://www.ruskav.com/og-image.jpg",
+            "description": "One of India's largest manufacturers of international-quality food service products — cafeteria and fast food trays, compartment plates, dinnerware, drinkware and bio-composite tableware.",
+            "telephone": "+91-88840-00097",
+            "email": "info@shahputra.com",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "# 31, 5th Main Road, Srirampuram",
+              "addressLocality": "Bangalore",
+              "postalCode": "560021",
+              "addressRegion": "Karnataka",
+              "addressCountry": "IN"
+            },
+            "areaServed": { "@type": "Country", "name": "India" },
+            "knowsAbout": [
+              "Cafeteria trays",
+              "Fast food trays",
+              "Compartment plates",
+              "Polycarbonate dinnerware",
+              "Break-resistant drinkware",
+              "Bio-composite tableware"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://www.ruskav.com/#website",
+            "url": "https://www.ruskav.com/",
+            "name": "RUSKAV Food Service Products",
+            "publisher": { "@id": "https://www.ruskav.com/#organization" },
+            "inLanguage": "en-IN"
+          },
+          {
+            "@type": "ItemList",
+            "name": "Ruskav product range",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Cafeteria & Fast Food Trays",
+                "url": "https://www.ruskav.com/#trays"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Compartment Trays & Plates",
+                "url": "https://www.ruskav.com/#compartment"
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "Dinnerware",
+                "url": "https://www.ruskav.com/#dinnerware"
+              },
+              {
+                "@type": "ListItem",
+                "position": 4,
+                "name": "Drinkware",
+                "url": "https://www.ruskav.com/#drinkware"
+              },
+              {
+                "@type": "ListItem",
+                "position": 5,
+                "name": "Bio-Composite Range",
+                "url": "https://www.ruskav.com/#bio"
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div style="max-width: 40rem; margin: 4rem auto; padding: 0 1.5rem; font-family: system-ui, sans-serif; line-height: 1.6">
+        <h1>RUSKAV Food Service Products</h1>
+        <p>
+          One of India's largest manufacturers of international-quality food service
+          products — cafeteria and fast food trays, compartment plates, dinnerware,
+          drinkware and bio-composite tableware. Every raw material is FDA-approved or
+          compliant with IS 10910.
+        </p>
+        <p>
+          This catalogue needs JavaScript to browse. To reach us directly:
+          <a href="mailto:info@shahputra.com">info@shahputra.com</a> or
+          <a href="tel:+918884000097">+91 88840 00097</a>.
+        </p>
+        <p># 31, 5th Main Road, Srirampuram, Bangalore 560 021, India</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

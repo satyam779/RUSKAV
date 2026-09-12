@@ -1,5 +1,13 @@
 export type CertKind = "food" | "dishwasher" | "freezer" | "microwave" | "tuv";
 
+export const CERT_LABEL: Record<CertKind, string> = {
+  food: "Food-contact safe",
+  dishwasher: "Dishwasher safe",
+  freezer: "Freezer safe",
+  microwave: "Microwave safe",
+  tuv: "TÜV Rheinland tested",
+};
+
 export type ColorKey =
   | "white"
   | "yellow"
@@ -102,9 +110,14 @@ export const categories: Category[] = [
       "Moulded in highly durable ABS and Co-Polymer with an attractively textured basket-weave surface that hides scratches through years of daily washing and stacking.",
     ],
     bullets: commonCafeteriaBullets,
-    heroImage: "/gallery/divided-trays-stack.webp",
-    secondaryImages: ["/gallery/studio-trays-stack.webp"],
-    thumb: "/gallery/studio-trays-black.webp",
+    heroImage: "/gallery/tray-in-service-meal.webp",
+    secondaryImages: [
+      "/gallery/tray-fastfood-red.webp",
+      "/gallery/tray-service-black.webp",
+      "/gallery/tray-service-narrow.webp",
+      "/gallery/tray-in-service-dark.webp",
+    ],
+    thumb: "/gallery/tray-in-service-red.webp",
     theme: "brand",
     groups: [
       {
@@ -236,9 +249,21 @@ export const categories: Category[] = [
       "Highly durable, long-lasting Co-Polymer construction",
       "Attractively textured surface hides scratches",
     ],
-    heroImage: "/gallery/compartment-trays-float.webp",
-    secondaryImages: [],
-    thumb: "/gallery/studio-compartment-trays.webp",
+    heroImage: "/gallery/studio-trays-stack.webp",
+    secondaryImages: [
+      "/gallery/compartment-trays-fan.webp",
+      "/gallery/compartment-trays-six.webp",
+      "/gallery/compartment-trays-three.webp",
+      "/gallery/compartment-trays-black.webp",
+      "/gallery/compartment-trays-stack.webp",
+      "/gallery/compartment-tray-green.webp",
+      "/gallery/compartment-tray-lidded.webp",
+      "/gallery/compartment-tray-lid-red.webp",
+      "/gallery/compartment-tray-lid-clear.webp",
+      "/gallery/compartment-carrier-open.webp",
+      "/gallery/compartment-carrier-loaded.webp",
+    ],
+    thumb: "/gallery/compartment-trays-colours.webp",
     theme: "brand",
     groups: [
       {
@@ -355,9 +380,15 @@ export const categories: Category[] = [
       "Perfect for hotels, caterers, hospitals, cafeterias, food courts & schools",
       "Highly durable, long-lasting PC and Co-Polymer construction",
     ],
-    heroImage: "/gallery/plates-float.webp",
-    secondaryImages: ["/gallery/glass-bowls-lids.webp", "/gallery/studio-bowls.webp", "/gallery/studio-stoneware.webp"],
-    thumb: "/gallery/studio-plates.webp",
+    heroImage: "/gallery/dinnerware-set-table.webp",
+    secondaryImages: [
+      "/gallery/plate-polycarbonate-rim.webp",
+      "/gallery/plate-copolymer-white.webp",
+      "/gallery/bowls-yellow-white.webp",
+      "/gallery/bowls-clear-row.webp",
+      "/gallery/bowls-lidded-clear.webp",
+    ],
+    thumb: "/gallery/bowls-lidded-clear.webp",
     theme: "brand",
     groups: [
       {
@@ -436,9 +467,15 @@ export const categories: Category[] = [
       "Textured exterior resists scratching, smooth interior for easy cleaning",
       "Designed with a Sani-Rim lip for sanitary drinking",
     ],
-    heroImage: "/gallery/tumblers-float.webp",
-    secondaryImages: [],
-    thumb: "/gallery/studio-drinkware.webp",
+    heroImage: "/gallery/tumblers-colourways.webp",
+    secondaryImages: [
+      "/gallery/tumblers-poured.webp",
+      "/gallery/tumblers-frosted-table.webp",
+      "/gallery/tumblers-clear-pair.webp",
+      "/gallery/tumbler-frosted.webp",
+      "/gallery/tumblers-row-table.webp",
+    ],
+    thumb: "/gallery/tumbler-in-service.webp",
     theme: "brand",
     groups: [
       {
@@ -492,16 +529,28 @@ export const bioCategory = {
     { label: "Circular economy", detail: "Supports farmers while cutting CO2 emissions" },
     { label: "Full range", detail: "Trays, plates, bowls, cups and compartment trays" },
   ],
-  heroImage: "/gallery/bio-dinnerware-set.webp",
-  secondaryImages: ["/gallery/bio-bowls-nested.webp", "/gallery/bio-cups-float.webp", "/gallery/bio-compartment-tray-float.webp"],
-  thumb: "/gallery/studio-bio.webp",
+  heroImage: "/gallery/bio-place-setting.webp",
+  secondaryImages: [
+    "/gallery/bio-compartment-tray.webp",
+    "/gallery/bio-cups.webp",
+    "/gallery/bio-plates.webp",
+    "/gallery/bio-bowls.webp",
+  ],
+  thumb: "/gallery/bio-bowls-overhead.webp",
   theme: "bio" as const,
 };
 
 export const companyInfo = {
   name: "RUSKAV Food Service Products",
   addressLines: ["# 31, 5th Main Road, Srirampuram,", "Bangalore 560 021, India"],
+  street: "# 31, 5th Main Road, Srirampuram",
+  city: "Bangalore",
+  postalCode: "560021",
+  region: "Karnataka",
+  country: "IN",
   phone: "+91 88840 00097",
+  // Digits only, country code first — the format wa.me expects.
+  whatsapp: "918884000097",
   email: "info@shahputra.com",
   tagline: "Proudly Made in India",
 };

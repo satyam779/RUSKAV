@@ -1,4 +1,4 @@
-import type { CertKind } from "../../data/catalogue";
+import { CERT_LABEL, type CertKind } from "../../data/catalogue";
 
 const stroke = {
   fill: "none",
@@ -60,35 +60,36 @@ function TuvIcon() {
   );
 }
 
-const CERT_META: Record<CertKind, { icon: () => React.ReactNode; label: string }> = {
-  food: { icon: FoodSafeIcon, label: "Food-contact safe" },
-  dishwasher: { icon: DishwasherIcon, label: "Dishwasher safe" },
-  freezer: { icon: FreezerIcon, label: "Freezer safe" },
-  microwave: { icon: MicrowaveIcon, label: "Microwave safe" },
-  tuv: { icon: TuvIcon, label: "TÜV Rheinland tested" },
+const CERT_ICON: Record<CertKind, () => React.ReactNode> = {
+  food: FoodSafeIcon,
+  dishwasher: DishwasherIcon,
+  freezer: FreezerIcon,
+  microwave: MicrowaveIcon,
+  tuv: TuvIcon,
 };
 
 export function CertBadge({ kind }: { kind: CertKind }) {
-  const meta = CERT_META[kind];
-  const Icon = meta.icon;
+  const label = CERT_LABEL[kind];
+  const Icon = CERT_ICON[kind];
   return (
     <span
-      title={meta.label}
+      title={label}
       className="inline-flex items-center gap-1.5 rounded-full border border-ink/10 bg-white/70 px-2.5 py-1 text-[11px] font-medium text-ink-soft"
     >
-      <Icon />
-      {meta.label}
+      <Icon aria-hidden="true" />
+      {label}
     </span>
   );
 }
 
-export function MaterialBadge({ code }: { code: string }) {
+export function MaterialBadge({ code, size = 30 }: { code: string; size?: number }) {
   return (
     <span
       title={`Recyclable material code: ${code}`}
-      className="inline-flex h-9 w-9 shrink-0 items-center justify-center"
+      className="inline-flex shrink-0 items-center justify-center"
+      style={{ width: size + 6, height: size + 6 }}
     >
-      <svg viewBox="0 0 24 24" width="30" height="30" className="text-ink-soft">
+      <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className="text-ink-soft">
         <path
           d="M12 2 22 20H2Z"
           fill="none"

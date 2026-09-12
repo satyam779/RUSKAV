@@ -44,13 +44,21 @@ export function Sustainability() {
             className="grid grid-cols-2 grid-rows-2 gap-4"
           >
             <div className="col-span-2 aspect-[16/10] overflow-hidden rounded-[1.75rem] bg-[#e6dcc6]">
-              <img src={bioCategory.heroImage} alt={bioCategory.name} loading="lazy" className="h-full w-full object-cover" />
+              <img
+                src={bioCategory.heroImage}
+                alt={bioCategory.name}
+                loading="lazy"
+                decoding="async"
+                width={1600}
+                height={1000}
+                className="h-full w-full object-cover"
+              />
             </div>
             <div className="aspect-square overflow-hidden rounded-2xl bg-[#e6dcc6]">
-              <img src={imgA} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img src={imgA} alt="" loading="lazy" decoding="async" width={800} height={800} className="h-full w-full object-cover" />
             </div>
             <div className="aspect-square overflow-hidden rounded-2xl bg-[#e6dcc6]">
-              <img src={imgB} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img src={imgB} alt="" loading="lazy" decoding="async" width={800} height={800} className="h-full w-full object-cover" />
             </div>
           </motion.div>
         </div>
@@ -64,7 +72,7 @@ export function Sustainability() {
             className="mt-14 flex items-center gap-6 rounded-3xl bg-white/40 p-6 md:p-8"
           >
             <div className="hidden h-28 w-28 shrink-0 overflow-hidden rounded-2xl sm:block">
-              <img src={imgC} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img src={imgC} alt="" loading="lazy" decoding="async" width={400} height={400} className="h-full w-full object-cover" />
             </div>
             <p className="text-balance leading-relaxed text-ink-soft">
               Every item in the bio-composite line is engineered to swap in wherever a

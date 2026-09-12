@@ -1,11 +1,14 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ProductGroup } from "../data/catalogue";
 import { ColorSwatches } from "./ColorSwatches";
 import { CertBadge, MaterialBadge } from "./icons/Badges";
+import { cart, useCartLines } from "../lib/cart";
 
 export function ProductGroupCard({ group, defaultOpen = false }: { group: ProductGroup; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
+  const cartLines = useCartLines();
 
   return (
     <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white/60">
@@ -73,26 +76,53 @@ export function ProductGroupCard({ group, defaultOpen = false }: { group: Produc
               <div>
                 <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Product codes</p>
                 <div className="overflow-x-auto rounded-xl border border-ink/10">
-                  <table className="w-full min-w-[420px] text-left text-sm">
+                  <table className="w-full min-w-[480px] text-left text-sm">
                     <thead>
                       <tr className="bg-paper-dim text-xs uppercase tracking-wide text-ink-soft">
                         <th className="px-3.5 py-2.5 font-semibold">Code</th>
                         <th className="px-3.5 py-2.5 font-semibold">Description</th>
                         <th className="px-3.5 py-2.5 font-semibold">Size</th>
                         <th className="px-3.5 py-2.5 font-semibold">Case pack</th>
+                        <th className="px-3.5 py-2.5 text-right font-semibold print-hide">
+                          <span className="sr-only">Add to enquiry</span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ink/8">
-                      {group.products.map((p) => (
-                        <tr key={p.code}>
-                          <td className="whitespace-nowrap px-3.5 py-2.5 font-mono text-[13px] font-semibold text-brand-dark">
-                            {p.code}
-                          </td>
-                          <td className="px-3.5 py-2.5 text-ink-soft">{p.description}</td>
-                          <td className="whitespace-nowrap px-3.5 py-2.5 text-ink-soft">{p.size}</td>
-                          <td className="whitespace-nowrap px-3.5 py-2.5 text-ink-soft">{p.casePack} ea.</td>
-                        </tr>
-                      ))}
+                      {group.products.map((p) => {
+                        const inCart = cartLines.some((l) => l.code === p.code);
+                        return (
+                          <tr key={p.code} className={inCart ? "bg-brand/[0.04]" : undefined}>
+                            <td className="whitespace-nowrap px-3.5 py-2.5 font-mono text-[13px] font-semibold text-brand-dark">
+                              <Link
+                                to={`/shop/${encodeURIComponent(p.code)}`}
+                                className="underline-offset-2 hover:underline"
+                              >
+                                {p.code}
+                              </Link>
+                            </td>
+                            <td className="px-3.5 py-2.5 text-ink-soft">{p.description}</td>
+                            <td className="whitespace-nowrap px-3.5 py-2.5 text-ink-soft">{p.size}</td>
+                            <td className="whitespace-nowrap px-3.5 py-2.5 text-ink-soft">{p.casePack} ea.</td>
+                            <td className="px-3.5 py-2.5 text-right print-hide">
+                              <button
+                                type="button"
+                                onClick={() => cart.add(p.code)}
+                                className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                                  inCart
+                                    ? "border-brand bg-brand text-white"
+                                    : "border-ink/15 text-ink-soft hover:border-brand hover:text-brand"
+                                }`}
+                              >
+                                <span className="sr-only">
+                                  Add a case of {p.code} {p.description} to your order
+                                </span>
+                                <span aria-hidden="true">{inCart ? "✓" : "+"}</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

@@ -40,6 +40,9 @@ export function CategoryGrid() {
                 src={c.thumb}
                 alt={c.name}
                 loading="lazy"
+                decoding="async"
+                width={1000}
+                height={1250}
                 className="absolute inset-0 h-full w-full scale-100 object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/5 to-transparent" />

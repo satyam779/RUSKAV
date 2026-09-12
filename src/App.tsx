@@ -1,55 +1,50 @@
-import { useEffect, useState } from "react";
-import { useFrameSequence } from "./hooks/useFrameSequence";
-import { Loader } from "./components/Loader";
-import { Header } from "./components/Header";
-import { Hero } from "./components/Hero";
-import { TrustStrip } from "./components/TrustStrip";
-import { About } from "./components/About";
-import { CategoryGrid } from "./components/CategoryGrid";
-import { CategoryShowcase } from "./components/CategoryShowcase";
-import { Sustainability } from "./components/Sustainability";
-import { Quality } from "./components/Quality";
-import { Contact } from "./components/Contact";
-import { Footer } from "./components/Footer";
-import { categories } from "./data/catalogue";
+import { lazy, Suspense } from "react";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Spinner } from "./components/ui";
+import { Layout } from "./routes/Layout";
+import { HomePage } from "./routes/HomePage";
+import { AboutPage } from "./routes/AboutPage";
+import { ProductsPage } from "./routes/ProductsPage";
+import { CategoryPage } from "./routes/CategoryPage";
+import { ShopPage } from "./routes/ShopPage";
+import { ProductPage } from "./routes/ProductPage";
+import { CartPage } from "./routes/CartPage";
+import { QualityPage } from "./routes/QualityPage";
+import { ContactPage } from "./routes/ContactPage";
+import { NotFoundPage } from "./routes/NotFoundPage";
 
-function App() {
-  const { progress, ready, images } = useFrameSequence();
-  const [loaderVisible, setLoaderVisible] = useState(true);
+// Staff-only routes, loaded on demand.
+const LoginPage = lazy(() =>
+  import("./routes/LoginPage").then((m) => ({ default: m.LoginPage }))
+);
+const AdminPage = lazy(() =>
+  import("./routes/AdminPage").then((m) => ({ default: m.AdminPage }))
+);
 
-  useEffect(() => {
-    if (!ready) return;
-    const t = setTimeout(() => setLoaderVisible(false), 400);
-    return () => clearTimeout(t);
-  }, [ready]);
+const staffRoute = (element: React.ReactNode) => (
+  <Suspense fallback={<Spinner label="Loading dashboard" />}>{element}</Suspense>
+);
 
-  useEffect(() => {
-    document.body.style.overflow = loaderVisible ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [loaderVisible]);
+const router = createBrowserRouter([
+  {
+    element: <Layout />,
+    children: [
+      { path: "/", element: <HomePage /> },
+      { path: "/about", element: <AboutPage /> },
+      { path: "/products", element: <ProductsPage /> },
+      { path: "/products/:categoryId", element: <CategoryPage /> },
+      { path: "/shop", element: <ShopPage /> },
+      { path: "/shop/:code", element: <ProductPage /> },
+      { path: "/cart", element: <CartPage /> },
+      { path: "/quality", element: <QualityPage /> },
+      { path: "/contact", element: <ContactPage /> },
+      { path: "/login", element: staffRoute(<LoginPage />) },
+      { path: "/admin", element: staffRoute(<AdminPage />) },
+      { path: "*", element: <NotFoundPage /> },
+    ],
+  },
+]);
 
-  return (
-    <>
-      <Loader progress={progress} visible={loaderVisible} />
-
-      <Header />
-      <main>
-        <Hero images={images} ready={ready} />
-        <TrustStrip />
-        <About />
-        <CategoryGrid />
-        {categories.map((c, i) => (
-          <CategoryShowcase key={c.id} category={c} reverse={i % 2 === 1} />
-        ))}
-        <Sustainability />
-        <Quality />
-        <Contact />
-      </main>
-      <Footer />
-    </>
-  );
+export default function App() {
+  return <RouterProvider router={router} />;
 }
-
-export default App;

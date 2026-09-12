@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# The 300 hero frames are decorative and add nothing to the index.
+Disallow: /Products%20Images/
+
+Sitemap: https://www.ruskav.com/sitemap.xml

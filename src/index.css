@@ -12,7 +12,7 @@
   --color-studio: #eeece7;
   --color-brand: #b91c2e;
   --color-brand-dark: #8f1522;
-  --color-brand-light: #d94c3d;
+  --color-brand-light: #e8705f;
   --color-bio: #b79c78;
   --color-bio-dark: #8a7250;
   --color-bio-paper: #efe8d8;
@@ -43,16 +43,31 @@
 
 html {
   scroll-behavior: smooth;
+  background: var(--color-paper);
 }
 
 body {
   margin: 0;
+  overflow-x: clip;
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+}
+
+/* Belt and braces: `clip` is the correct value, `hidden` the fallback for
+   browsers that predate it. Both must be on html as well as body, or the
+   marquee's width propagates to the viewport regardless. */
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
+
+html {
+  overflow-x: clip;
 }
 
 ::selection {
@@ -72,18 +87,126 @@ body {
   text-wrap: balance;
 }
 
-/* The scrollbar gutter sits outside the content box, so it always paints a
-   strip of the html background down the right edge — a light band against the
-   dark Quality/Footer sections, no matter what the track colour is. Removing
-   the scrollbar removes the gutter, letting every section run edge to edge.
-   Scrolling itself (wheel, touch, keyboard, scrollbar drag on trackpads) is
-   unaffected. */
-html {
-  scrollbar-width: none;
-  background: var(--color-paper);
+/* Every interactive element gets a visible keyboard ring. Several components
+   style their focus state as a border colour change only, which is too subtle
+   to navigate by — and the form fields previously set `outline-none` with no
+   replacement at all, leaving keyboard users with no indication of where they
+   were. `:focus-visible` keeps mouse clicks clean. */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 
-::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+/* On the dark Quality section and footer, brand red on near-black is too low
+   contrast to serve as a focus ring. */
+.bg-ink :focus-visible,
+footer :focus-visible {
+  outline-color: var(--color-paper);
+}
+
+/* A thin custom scrollbar. The scrollbar was previously removed outright so
+   that full-bleed dark sections could reach the right edge without a light
+   gutter beside them — but on a page whose hero alone is several screens tall,
+   taking away the only indication of scroll position (and the ability to drag
+   it) costs more than the gutter did. The thumb is neutral enough to sit
+   against both the paper and ink sections, and the header carries a progress
+   bar as a second cue. */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-paper-dim);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #c4bfb2;
+    border: 2px solid var(--color-paper-dim);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a8a294;
+  }
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #c4bfb2 var(--color-paper-dim);
+}
+
+/* Honour the OS "reduce motion" setting. Framer Motion components are handled
+   by `<MotionConfig reducedMotion="user">` in App.tsx; this covers the CSS
+   animations, the smooth-scroll behaviour and the canvas hero (which also
+   drops to a single static frame — see `shouldLoadFrameSequence`). */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* The marquee carries real content, so it needs to stay readable once the
+     animation stops — let it wrap instead of running off the edge. */
+  .animate-marquee {
+    animation: none !important;
+    width: 100% !important;
+    flex-wrap: wrap;
+    justify-content: center;
+    white-space: normal;
+  }
+}
+
+/* The catalogue is a reference document and people print spec pages from it.
+   Drop the page chrome, flatten the interactive bits and let the tables break
+   across pages properly. */
+@media print {
+  header,
+  footer,
+  .print-hide {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  main {
+    display: block;
+  }
+
+  section {
+    padding: 1.5rem 0 !important;
+    break-inside: avoid-page;
+  }
+
+  canvas,
+  video {
+    display: none !important;
+  }
+
+  a[href^="#"]::after {
+    content: "";
+  }
+
+  table {
+    break-inside: auto;
+    font-size: 10pt;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
 }

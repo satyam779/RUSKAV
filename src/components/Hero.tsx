@@ -1,7 +1,12 @@
 import { useEffect, useRef } from "react";
-import type { MutableRefObject, ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 
-const FRAME_COUNT = 300;
+/**
+ * Poster for the static hero. Deliberately not a frame from the sequence —
+ * those are near-white studio renders that disappear behind any scrim dark
+ * enough to keep the headline legible. This is a committed, optimised render.
+ */
+const POSTER = "/gallery/studio-trays-stack.webp";
 
 type Phase = {
   range: [number, number, number, number];
@@ -19,6 +24,25 @@ function phaseOpacity(p: number, [a, b, c, d]: Phase["range"], first = false, la
   if (p <= c) return 1;
   if (p < d) return 1 - (p - c) / (d - c);
   return last ? 1 : 0;
+}
+
+function HeroActions() {
+  return (
+    <div className="pointer-events-auto mt-8 flex flex-wrap items-center justify-center gap-3">
+      <a
+        href="#catalogue"
+        className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-paper transition hover:bg-brand"
+      >
+        Browse the catalogue
+      </a>
+      <a
+        href="#contact"
+        className="rounded-full border border-ink/20 bg-paper/40 px-6 py-3 text-sm font-semibold text-ink backdrop-blur-sm transition hover:border-ink/40"
+      >
+        Get in touch
+      </a>
+    </div>
+  );
 }
 
 const phases: Phase[] = [
@@ -82,46 +106,106 @@ const phases: Phase[] = [
         <p className="mx-auto mt-5 max-w-md text-balance text-base text-ink-soft md:text-lg">
           TÜV Rheinland tested. Distributor and dealer enquiries welcome nationwide.
         </p>
-        <div className="pointer-events-auto mt-8 flex flex-wrap items-center justify-center gap-3">
-          <a
-            href="#trays"
-            className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-paper transition hover:bg-brand"
-          >
-            Explore the range
-          </a>
-          <a
-            href="#contact"
-            className="rounded-full border border-ink/20 px-6 py-3 text-sm font-semibold text-ink transition hover:border-ink/40"
-          >
-            Get in touch
-          </a>
-        </div>
+        <HeroActions />
       </>
     ),
   },
 ];
 
-export function Hero({ images, ready }: { images: MutableRefObject<HTMLImageElement[]>; ready: boolean }) {
+/**
+ * Static hero for visits that skip the frame sequence — `prefers-reduced-motion`,
+ * Save-Data and 2G. Phones do get the scrub now, at a third of the frames. One
+ * frame, one screen, no scroll-jacking: the four scroll phases collapse into a
+ * single headline.
+ */
+function StaticHero() {
+  return (
+    <section id="top" className="relative min-h-[88svh] overflow-hidden bg-studio">
+      <img
+        src={POSTER}
+        alt="A stack of Ruskav compartment trays in ten colourways."
+        width={1400}
+        height={1400}
+        fetchPriority="high"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-paper/85 via-paper/75 to-paper/95" />
+
+      <div className="relative grid min-h-[88svh] place-items-center px-6 py-24">
+        <div className="w-full max-w-2xl text-center">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.4em] text-brand">
+            Ruskav Food Service Products
+          </p>
+          <h1 className="font-display text-balance text-[12vw] font-medium leading-[0.98] text-ink sm:text-5xl md:text-6xl">
+            Serving quality, tray after tray.
+          </h1>
+          <p className="mx-auto mt-5 max-w-md text-balance text-base text-ink-soft">
+            Trusted across schools, hospitals, cafeterias and QSRs nationwide —
+            FDA-approved, dishwasher and microwave safe, proudly made in India.
+          </p>
+          <HeroActions />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function Hero({
+  images,
+  ready,
+  animated,
+  count,
+}: {
+  images: RefObject<HTMLImageElement[]>;
+  ready: boolean;
+  animated: boolean;
+  /** Frames this visit holds; a phone scrubs a third of the desktop sequence. */
+  count: number;
+}) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const phaseRefs = useRef<(HTMLDivElement | null)[]>([]);
   const hintRef = useRef<HTMLDivElement>(null);
-  const frameRef = useRef(0);
+  /** Index actually painted, which may be a fallback for one still loading. */
+  const paintedRef = useRef(-1);
 
   useEffect(() => {
+    if (!animated) return;
+
     const canvas = canvasRef.current;
     const section = sectionRef.current;
     if (!canvas || !section) return;
 
     const ctx = canvas.getContext("2d");
-    if (ctx) {
+    const applySmoothing = () => {
+      if (!ctx) return;
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
-    }
+    };
+    applySmoothing();
+
+    const isLoaded = (img?: HTMLImageElement) => !!img && img.complete && img.naturalWidth > 0;
+
+    /**
+     * Frames now stream in behind the live page, so the exact frame for a
+     * scroll position may not have arrived yet. Search outward for the closest
+     * one that has — a neighbouring frame is imperceptible, a blank canvas is
+     * not.
+     */
+    const nearestLoaded = (index: number) => {
+      const frames = images.current;
+      if (!frames) return -1;
+      if (isLoaded(frames[index])) return index;
+      for (let offset = 1; offset < count; offset++) {
+        if (isLoaded(frames[index - offset])) return index - offset;
+        if (isLoaded(frames[index + offset])) return index + offset;
+      }
+      return -1;
+    };
 
     const drawFrame = (index: number) => {
-      const img = images.current[index];
-      if (!img || !ctx || !img.complete || img.naturalWidth === 0) return;
+      const img = images.current?.[index];
+      if (!img || !ctx) return;
 
       const { width: cw, height: ch } = canvas;
       const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
@@ -131,15 +215,17 @@ export function Hero({ images, ready }: { images: MutableRefObject<HTMLImageElem
       ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
     };
 
+    /** Returns whether the frame on screen is the exact one for this scroll position. */
     const render = () => {
       const rect = section.getBoundingClientRect();
       const scrollable = rect.height - window.innerHeight;
       const progress = scrollable > 0 ? clamp01(-rect.top / scrollable) : 0;
 
-      const index = Math.min(FRAME_COUNT - 1, Math.round(progress * (FRAME_COUNT - 1)));
-      if (index !== frameRef.current) {
-        frameRef.current = index;
-        drawFrame(index);
+      const wanted = Math.min(count - 1, Math.round(progress * (count - 1)));
+      const available = nearestLoaded(wanted);
+      if (available >= 0 && available !== paintedRef.current) {
+        paintedRef.current = available;
+        drawFrame(available);
       }
 
       phases.forEach((phase, i) => {
@@ -154,6 +240,8 @@ export function Hero({ images, ready }: { images: MutableRefObject<HTMLImageElem
       if (hintRef.current) {
         hintRef.current.style.opacity = String(1 - clamp01(progress / 0.05));
       }
+
+      return wanted === available;
     };
 
     let queued = false;
@@ -171,27 +259,40 @@ export function Hero({ images, ready }: { images: MutableRefObject<HTMLImageElem
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
       // Resizing a canvas resets all context state, including smoothing.
-      if (ctx) {
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-      }
-      drawFrame(frameRef.current);
+      applySmoothing();
+      paintedRef.current = -1;
       render();
     };
+
+    /**
+     * While frames are still arriving, a visitor who stopped scrolling would
+     * sit on a fallback frame until they moved again. Re-check a few times a
+     * second until the painted frame is the wanted one and the sequence is
+     * complete.
+     */
+    const settle = setInterval(() => {
+      const exact = render();
+      if (exact && isLoaded(images.current?.[count - 1])) clearInterval(settle);
+    }, 400);
 
     resize();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", resize);
     return () => {
+      clearInterval(settle);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", resize);
     };
-  }, [images, ready]);
+  }, [images, ready, animated, count]);
+
+  if (!animated) return <StaticHero />;
 
   return (
-    <section id="top" ref={sectionRef} className="relative h-[650vh] bg-studio">
+    // Scroll length sets the scrub speed: the shorter the section, the further
+    // the sequence travels per flick. 650vh was a long way to push a phone.
+    <section id="top" ref={sectionRef} className="relative h-[340vh] bg-studio md:h-[430vh]">
       <div className="sticky top-0 h-screen w-full overflow-hidden bg-studio">
-        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+        <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-paper/70" />
 
@@ -214,6 +315,7 @@ export function Hero({ images, ready }: { images: MutableRefObject<HTMLImageElem
 
         <div
           ref={hintRef}
+          aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 bottom-8 flex flex-col items-center gap-2 text-ink-soft"
         >
           <span className="text-[10px] uppercase tracking-[0.35em]">Scroll</span>

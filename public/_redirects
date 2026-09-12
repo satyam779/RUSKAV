@@ -1,0 +1,4 @@
+# Netlify / Cloudflare Pages: the app is a single-page app with real URLs, so
+# every path must serve index.html and let the router resolve it. Without this,
+# a reload on /shop or a shared /products/trays link 404s.
+/*    /index.html   200
