@@ -118,7 +118,7 @@ export function CategoryPage() {
   return (
     <>
       <PageHeader
-        backdrop={category.heroImage}
+        backdrop={category.backdropImage}
         kicker={category.kicker}
         title={category.name}
         intro={category.tagline}

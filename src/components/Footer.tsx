@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { categories, bioCategory, companyInfo } from "../data/catalogue";
 import { MadeInIndiaBadge } from "./icons/Badges";
+import { useCartBarVisible } from "./CartBar";
 
 const productLinks = [
   ...categories.map((c) => ({ to: `/products/${c.id}`, label: c.shortName })),
@@ -15,8 +16,13 @@ const companyLinks = [
 ];
 
 export function Footer() {
+  // The floating cart bar hovers over the last 80-odd pixels of the page, and
+  // the end of the footer is the one place a reader cannot scroll out from
+  // under it — so the footer makes room for it while it is there.
+  const cartBar = useCartBarVisible();
+
   return (
-    <footer className="bg-ink pt-20 text-paper/80">
+    <footer className={`bg-ink pt-20 text-paper/80 ${cartBar ? "pb-24 md:pb-20" : ""}`}>
       <div className="mx-auto max-w-6xl px-6">
         <div className="grid gap-12 pb-14 md:grid-cols-[1.3fr_1fr_1fr_1.1fr]">
           <div>

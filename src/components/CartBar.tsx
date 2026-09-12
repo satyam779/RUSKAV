@@ -4,6 +4,25 @@ import { Link, useLocation } from "react-router-dom";
 import { cart, priceCart, useCartLines } from "../lib/cart";
 import { useProducts, formatMoney } from "../lib/products";
 
+/** The routes where the floating bar would cover the thing it summarises. */
+const HIDDEN_ON = (pathname: string) =>
+  pathname === "/cart" || pathname.startsWith("/admin") || pathname === "/login";
+
+/**
+ * Whether the floating bar is on screen, for the footer to pad itself past it.
+ *
+ * Deliberately lighter than the bar's own test: this reads the cart lines
+ * alone, where the bar also prices them. Calling `useProducts` here would put
+ * a second catalogue request on every page for the sake of some padding, and
+ * the one case the two disagree — a saved code that no longer exists — costs
+ * an unused inch of footer, not a covered button.
+ */
+export function useCartBarVisible() {
+  const lines = useCartLines();
+  const { pathname } = useLocation();
+  return lines.length > 0 && !HIDDEN_ON(pathname);
+}
+
 /**
  * Floating cart summary.
  *
@@ -17,8 +36,7 @@ export function CartBar() {
   const [expanded, setExpanded] = useState(false);
 
   const totals = priceCart(lines, products);
-  const hidden = pathname === "/cart" || pathname.startsWith("/admin") || pathname === "/login";
-  const visible = totals.itemCount > 0 && !hidden;
+  const visible = totals.itemCount > 0 && !HIDDEN_ON(pathname);
   // Derived rather than reset in an effect: while the bar is hidden its
   // expanded state is irrelevant, and it should come back collapsed.
   const showList = expanded && visible;

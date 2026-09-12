@@ -41,30 +41,28 @@ export function PageHeader({
     dim: "bg-paper-dim text-ink",
     ink: "bg-ink text-paper",
   };
+
+  // The scrim and the photograph are one CSS background rather than a stack of
+  // absolutely-positioned elements. Inside a flex header those were sizing
+  // themselves against the content instead of the header, which left a bare
+  // strip of paper down one side on narrow screens.
+  const backdropStyle = backdrop
+    ? {
+        backgroundImage: `linear-gradient(to bottom, rgba(250,248,244,0.72), rgba(250,248,244,0.80) 55%, rgb(250,248,244)), url("${
+          typeof backdrop === "string" ? backdrop : HERO_STILL
+        }")`,
+      }
+    : undefined;
   return (
     <header
-      className={`relative overflow-hidden ${tones[tone]} ${
+      className={`relative overflow-hidden bg-cover bg-center ${tones[tone]} ${
         backdrop
-          ? "flex min-h-[100svh] items-center pt-28 pb-20 md:pt-36"
+          ? "flex min-h-[78svh] items-center pt-28 pb-16 md:min-h-[100svh] md:pt-36 md:pb-20"
           : "pt-28 pb-14 md:pt-36 md:pb-20"
       }`}
+      style={backdropStyle}
     >
-      {backdrop && (
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          {/* One still from the home page's sequence, not the sequence itself:
-              the masthead wants a setting, not a second animation competing
-              with the page under it. */}
-          <img
-            src={typeof backdrop === "string" ? backdrop : HERO_STILL}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-paper/70 via-paper/78 to-paper" />
-        </div>
-      )}
-      <div className="relative mx-auto w-full max-w-6xl px-6">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-6">
         <p
           className={`text-xs font-semibold uppercase tracking-[0.35em] ${
             tone === "ink" ? "text-brand-light" : "text-brand"

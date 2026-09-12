@@ -84,6 +84,12 @@ export type Category = {
   paragraphs: string[];
   bullets: string[];
   heroImage: string;
+  /**
+   * The full-screen masthead wall. Kept apart from `heroImage`: that is a
+   * portrait cut-out on transparency, which cropped to a landscape screen
+   * shows a slice of product over bare paper.
+   */
+  backdropImage: string;
   secondaryImages: string[];
   thumb: string;
   theme: "brand" | "bio";
@@ -111,6 +117,7 @@ export const categories: Category[] = [
     ],
     bullets: commonCafeteriaBullets,
     heroImage: "/gallery/tray-in-service-meal.webp",
+    backdropImage: "/gallery/tray-in-service-red.webp",
     secondaryImages: [
       "/gallery/tray-fastfood-red.webp",
       "/gallery/tray-service-black.webp",
@@ -250,6 +257,7 @@ export const categories: Category[] = [
       "Attractively textured surface hides scratches",
     ],
     heroImage: "/gallery/studio-trays-stack.webp",
+    backdropImage: "/gallery/studio-trays-stack.webp",
     secondaryImages: [
       "/gallery/compartment-trays-fan.webp",
       "/gallery/compartment-trays-six.webp",
@@ -381,6 +389,7 @@ export const categories: Category[] = [
       "Highly durable, long-lasting PC and Co-Polymer construction",
     ],
     heroImage: "/gallery/dinnerware-set-table.webp",
+    backdropImage: "/gallery/dinnerware-set-table.webp",
     secondaryImages: [
       "/gallery/plate-polycarbonate-rim.webp",
       "/gallery/plate-copolymer-white.webp",
@@ -468,6 +477,7 @@ export const categories: Category[] = [
       "Designed with a Sani-Rim lip for sanitary drinking",
     ],
     heroImage: "/gallery/tumblers-colourways.webp",
+    backdropImage: "/gallery/tumblers-row-table.webp",
     secondaryImages: [
       "/gallery/tumblers-poured.webp",
       "/gallery/tumblers-frosted-table.webp",
@@ -530,6 +540,7 @@ export const bioCategory = {
     { label: "Full range", detail: "Trays, plates, bowls, cups and compartment trays" },
   ],
   heroImage: "/gallery/bio-place-setting.webp",
+  backdropImage: "/gallery/bio-bowls.webp",
   secondaryImages: [
     "/gallery/bio-compartment-tray.webp",
     "/gallery/bio-cups.webp",

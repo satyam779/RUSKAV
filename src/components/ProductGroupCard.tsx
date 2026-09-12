@@ -75,15 +75,19 @@ export function ProductGroupCard({ group, defaultOpen = false }: { group: Produc
 
               <div>
                 <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-ink-soft/70">Product codes</p>
+                {/* Columns drop away on phones rather than the table carrying a
+                    min-width: a table wider than the screen makes the whole
+                    document wider than the screen, and Chrome zooms the site
+                    out to fit it. */}
                 <div className="overflow-x-auto rounded-xl border border-ink/10">
-                  <table className="w-full min-w-[480px] text-left text-sm">
+                  <table className="w-full text-left text-sm sm:min-w-[420px]">
                     <thead>
                       <tr className="bg-paper-dim text-xs uppercase tracking-wide text-ink-soft">
-                        <th className="px-3.5 py-2.5 font-semibold">Code</th>
-                        <th className="px-3.5 py-2.5 font-semibold">Description</th>
-                        <th className="px-3.5 py-2.5 font-semibold">Size</th>
-                        <th className="px-3.5 py-2.5 font-semibold">Case pack</th>
-                        <th className="px-3.5 py-2.5 text-right font-semibold print-hide">
+                        <th className="px-3 py-2.5 font-semibold sm:px-3.5">Code</th>
+                        <th className="px-3 py-2.5 font-semibold sm:px-3.5">Description</th>
+                        <th className="hidden px-3.5 py-2.5 font-semibold sm:table-cell">Size</th>
+                        <th className="hidden px-3.5 py-2.5 font-semibold sm:table-cell">Case pack</th>
+                        <th className="px-3 py-2.5 text-right font-semibold print-hide sm:px-3.5">
                           <span className="sr-only">Add to enquiry</span>
                         </th>
                       </tr>
@@ -93,7 +97,7 @@ export function ProductGroupCard({ group, defaultOpen = false }: { group: Produc
                         const inCart = cartLines.some((l) => l.code === p.code);
                         return (
                           <tr key={p.code} className={inCart ? "bg-brand/[0.04]" : undefined}>
-                            <td className="whitespace-nowrap px-3.5 py-2.5 font-mono text-[13px] font-semibold text-brand-dark">
+                            <td className="whitespace-nowrap px-3 py-2.5 align-top font-mono text-[13px] font-semibold text-brand-dark sm:px-3.5 sm:align-middle">
                               <Link
                                 to={`/shop/${encodeURIComponent(p.code)}`}
                                 className="underline-offset-2 hover:underline"
@@ -101,10 +105,19 @@ export function ProductGroupCard({ group, defaultOpen = false }: { group: Produc
                                 {p.code}
                               </Link>
                             </td>
-                            <td className="px-3.5 py-2.5 text-ink-soft">{p.description}</td>
-                            <td className="whitespace-nowrap px-3.5 py-2.5 text-ink-soft">{p.size}</td>
-                            <td className="whitespace-nowrap px-3.5 py-2.5 text-ink-soft">{p.casePack} ea.</td>
-                            <td className="px-3.5 py-2.5 text-right print-hide">
+                            <td className="px-3 py-2.5 align-top text-ink-soft sm:px-3.5 sm:align-middle">
+                              {p.description}
+                              <span className="mt-0.5 block text-xs text-ink-soft/80 sm:hidden">
+                                {p.size} · {p.casePack} ea.
+                              </span>
+                            </td>
+                            <td className="hidden whitespace-nowrap px-3.5 py-2.5 text-ink-soft sm:table-cell">
+                              {p.size}
+                            </td>
+                            <td className="hidden whitespace-nowrap px-3.5 py-2.5 text-ink-soft sm:table-cell">
+                              {p.casePack} ea.
+                            </td>
+                            <td className="px-3 py-2.5 text-right align-top print-hide sm:px-3.5 sm:align-middle">
                               <button
                                 type="button"
                                 onClick={() => cart.add(p.code)}

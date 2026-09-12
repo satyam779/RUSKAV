@@ -188,29 +188,34 @@ export function ProductFinder() {
             </div>
           </div>
         ) : (
+          /* The table drops columns instead of carrying a min-width on phones.
+             A min-width wide enough for five columns makes the document wider
+             than the screen, and Chrome answers that by zooming the whole site
+             out to fit — which is where the bare strip down the right side and
+             the shrunken, hard-to-hit buttons came from. */
           <div className="mt-6 overflow-x-auto rounded-3xl border border-ink/10">
-            <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+            <table className="w-full border-collapse text-left text-sm sm:min-w-[560px]">
               <caption className="sr-only">
                 Ruskav product codes with description, size, case pack and material
               </caption>
               <thead>
                 <tr className="bg-paper-dim text-xs uppercase tracking-wide text-ink-soft">
-                  <th scope="col" className="px-4 py-3 font-semibold">
+                  <th scope="col" className="px-3 py-3 font-semibold sm:px-4">
                     Code
                   </th>
-                  <th scope="col" className="px-4 py-3 font-semibold">
+                  <th scope="col" className="px-3 py-3 font-semibold sm:px-4">
                     Description
                   </th>
-                  <th scope="col" className="px-4 py-3 font-semibold">
+                  <th scope="col" className="hidden px-4 py-3 font-semibold sm:table-cell">
                     Size
                   </th>
-                  <th scope="col" className="hidden px-4 py-3 font-semibold sm:table-cell">
+                  <th scope="col" className="hidden px-4 py-3 font-semibold md:table-cell">
                     Case pack
                   </th>
-                  <th scope="col" className="hidden px-4 py-3 font-semibold md:table-cell">
+                  <th scope="col" className="hidden px-4 py-3 font-semibold lg:table-cell">
                     Material
                   </th>
-                  <th scope="col" className="print-hide px-4 py-3 text-right font-semibold">
+                  <th scope="col" className="print-hide px-3 py-3 text-right font-semibold sm:px-4">
                     Enquire
                   </th>
                 </tr>
@@ -222,7 +227,7 @@ export function ProductFinder() {
                     <tr key={p.code} className={inCart ? "bg-brand/[0.04]" : "bg-white/40"}>
                       <th
                         scope="row"
-                        className="whitespace-nowrap px-4 py-3 text-left font-mono text-[13px] font-semibold text-brand-dark"
+                        className="whitespace-nowrap px-3 py-3 text-left align-top font-mono text-[13px] font-semibold text-brand-dark sm:px-4 sm:align-middle"
                       >
                         <Link
                           to={`/shop/${encodeURIComponent(p.code)}`}
@@ -231,8 +236,13 @@ export function ProductFinder() {
                           {p.code}
                         </Link>
                       </th>
-                      <td className="px-4 py-3 text-ink">
+                      <td className="px-3 py-3 align-top text-ink sm:px-4 sm:align-middle">
                         {p.description}
+                        {/* The columns the phone layout drops, folded back in
+                            under the description where they can wrap. */}
+                        <span className="mt-0.5 block text-xs text-ink-soft sm:hidden">
+                          {p.size} · {p.casePack} ea. · {p.material}
+                        </span>
                         <a
                           href={`#${p.categoryId}`}
                           className="mt-0.5 block text-xs text-ink-soft underline-offset-2 hover:text-brand hover:underline"
@@ -240,17 +250,19 @@ export function ProductFinder() {
                           {p.groupName === p.description ? p.categoryShortName : p.groupName}
                         </a>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-ink-soft">{p.size}</td>
                       <td className="hidden whitespace-nowrap px-4 py-3 text-ink-soft sm:table-cell">
+                        {p.size}
+                      </td>
+                      <td className="hidden whitespace-nowrap px-4 py-3 text-ink-soft md:table-cell">
                         {p.casePack} ea.
                       </td>
-                      <td className="hidden whitespace-nowrap px-4 py-3 md:table-cell">
+                      <td className="hidden whitespace-nowrap px-4 py-3 lg:table-cell">
                         <span className="flex items-center gap-1.5 text-ink-soft">
                           <MaterialBadge code={p.materialCode} size={22} />
                           {p.material}
                         </span>
                       </td>
-                      <td className="print-hide px-4 py-3 text-right">
+                      <td className="print-hide px-3 py-3 text-right align-top sm:px-4 sm:align-middle">
                         <button
                           type="button"
                           onClick={() => cart.add(p.code)}
