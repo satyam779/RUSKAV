@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
+import { useConsentPending } from "./CookieBanner";
 import { cart, priceCart, useCartLines } from "../lib/cart";
 import { useProducts, formatMoney } from "../lib/products";
+import { useTradeAccess } from "../lib/trade";
 
 /** The routes where the floating bar would cover the thing it summarises. */
 const HIDDEN_ON = (pathname: string) =>
@@ -35,8 +37,13 @@ export function CartBar() {
   const { pathname } = useLocation();
   const [expanded, setExpanded] = useState(false);
 
+  const consentPending = useConsentPending();
+  const { unlocked } = useTradeAccess();
+
   const totals = priceCart(lines, products);
-  const visible = totals.itemCount > 0 && !HIDDEN_ON(pathname);
+  // The cookie notice takes the same corner on a phone. It is answered once
+  // and never returns, so the bar waits rather than stacking behind it.
+  const visible = totals.itemCount > 0 && !HIDDEN_ON(pathname) && !consentPending;
   // Derived rather than reset in an effect: while the bar is hidden its
   // expanded state is irrelevant, and it should come back collapsed.
   const showList = expanded && visible;
@@ -70,9 +77,11 @@ export function CartBar() {
                           </p>
                           <p className="truncate text-xs text-ink-soft">
                             {l.quantity} × {l.product.name}
-                            {l.unitPrice !== null
-                              ? ` · ${formatMoney(l.lineTotal, l.product.currency)}`
-                              : " · price on request"}
+                            {l.unitPrice === null
+                              ? " · price on request"
+                              : unlocked
+                                ? ` · ${formatMoney(l.lineTotal, l.product.currency)}`
+                                : ""}
                           </p>
                         </div>
                         <button
@@ -118,7 +127,7 @@ export function CartBar() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-ink">
-                    {totals.subtotal > 0
+                    {unlocked && totals.subtotal > 0
                       ? formatMoney(totals.subtotal, totals.currency)
                       : "Ready to quote"}
                   </span>

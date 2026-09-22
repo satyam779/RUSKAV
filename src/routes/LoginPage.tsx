@@ -90,12 +90,12 @@ export function LoginPage() {
   return (
     <>
       <PageHeader
-        kicker={session ? "Your account" : "Sign in"}
-        title={session ? "You're signed in." : "Sign in to Ruskav."}
+        kicker={session ? "Your account" : "Trade account"}
+        title={session ? "Your prices are unlocked." : "Sign in to see wholesale prices."}
         intro={
           session
-            ? "Your details fill themselves in at checkout, and everything you send is kept against your account."
-            : "Sign in with Google to keep your orders and enquiries together. You can still order as a guest without an account."
+            ? "Case rates and per-piece costs are visible across the site, your details fill themselves in at checkout, and everything you send is kept against your account."
+            : "Trade pricing is for account holders. Signing in with Google creates yours — free, one tap, nothing to fill in — and unlocks every price on the site."
         }
         tone="dim"
       />
@@ -166,6 +166,34 @@ export function LoginPage() {
               <p className="mt-3 text-center text-xs text-ink-soft">
                 First time? Signing in creates your account — there is nothing else to fill in.
               </p>
+
+              <ul className="mt-6 flex flex-col gap-2.5 border-t border-ink/10 pt-5">
+                {[
+                  "Case prices, per-piece rates and current offers",
+                  "Order totals with GST, and online payment",
+                  "Your enquiries and orders kept in one place",
+                ].map((line) => (
+                  <li key={line} className="flex items-start gap-2.5 text-[13px] text-ink-soft">
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 16 16"
+                      aria-hidden="true"
+                      className="mt-0.5 shrink-0 text-brand"
+                    >
+                      <path
+                        d="M3.5 8.5 6.5 11.5 12.5 4.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    {line}
+                  </li>
+                ))}
+              </ul>
 
               {error && (
                 <p role="alert" className="mt-4 text-sm font-medium text-brand">
@@ -240,7 +268,7 @@ export function LoginPage() {
           <p className="mt-8 text-center text-sm text-ink-soft">
             {session ? "Ready to order?" : "Don't want an account?"}{" "}
             <Link to="/shop" className="font-semibold text-brand hover:underline">
-              {session ? "Browse the shop" : "Order as a guest"}
+              {session ? "Browse the shop" : "Browse the range and send an enquiry"}
             </Link>
             .
           </p>

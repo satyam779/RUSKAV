@@ -16,6 +16,8 @@ import {
   buttonClass,
   type SpecItem,
 } from "../components/ui";
+import { ProductCard } from "../components/ProductCard";
+import { TradeGate } from "../components/TradeGate";
 import { NotFoundPage } from "./NotFoundPage";
 import { cart, useCartLines } from "../lib/cart";
 import { effectivePrice, hasPrice, useProducts } from "../lib/products";
@@ -135,9 +137,17 @@ export function ProductPage() {
               src={product.images[activeImage] ?? product.images[0]}
               alt={product.name}
               ratio="aspect-square"
-              className="rounded-[2rem]"
+              frameClassName="rounded-[2rem]"
+              panel={product.categoryId === "bio" ? "bio" : "studio"}
+              eager
               sizes="(max-width: 768px) 92vw, 46vw"
-            />
+            >
+              {product.discountPercent > 0 && (
+                <span className="absolute left-5 top-5 rounded-full bg-brand px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-sm shadow-brand/40">
+                  {Math.round(product.discountPercent)}% off
+                </span>
+              )}
+            </ProductImage>
             {product.images.length > 1 && (
               <ul className="mt-4 flex flex-wrap gap-3">
                 {product.images.map((src, i) => (
@@ -200,7 +210,12 @@ export function ProductPage() {
               ]}
             />
 
-            <div className="mt-7 rounded-3xl border border-ink/10 bg-white/70 p-6">
+            <div className="mt-7 overflow-hidden rounded-3xl border border-ink/10 bg-white p-6 shadow-[0_16px_40px_-30px_rgba(23,20,15,0.6)]">
+              {hasPrice(product) && (
+                <div className="mb-5">
+                  <TradeGate compact />
+                </div>
+              )}
               <Price product={product} size="lg" />
               <PerPiece product={product} className="mt-2 text-sm text-ink-soft" />
               {unit !== null && (
@@ -369,27 +384,14 @@ export function ProductPage() {
           <h2 className="font-display mb-8 text-2xl font-medium text-ink">
             More from {category?.shortName ?? "this range"}
           </h2>
-          <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4 md:gap-x-6">
             {related.map((p) => (
-              <Link
+              <ProductCard
                 key={p.code}
-                to={`/shop/${encodeURIComponent(p.code)}`}
-                className="group flex flex-col gap-3 rounded-3xl border border-ink/10 bg-white/70 p-4 transition hover:border-brand/40"
-              >
-                <ProductImage
-                  src={p.images[0]}
-                  alt={p.name}
-                  className="transition-transform duration-500 group-hover:scale-[1.03]"
-                  sizes="(max-width: 640px) 45vw, 22vw"
-                />
-                <div>
-                  <p className="font-mono text-[11px] font-semibold text-brand-dark">{p.code}</p>
-                  <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">{p.name}</p>
-                  <div className="mt-2">
-                    <Price product={p} size="sm" />
-                  </div>
-                </div>
-              </Link>
+                product={p}
+                size="compact"
+                sizes="(max-width: 640px) 46vw, 23vw"
+              />
             ))}
           </div>
         </Section>

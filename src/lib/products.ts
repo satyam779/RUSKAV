@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { categories, type CertKind, type ColorKey } from "../data/catalogue";
+import { type CertKind, type ColorKey } from "../data/catalogue";
+import { imagePairFor } from "./productImagery";
 import { allProducts } from "./catalogueIndex";
 import { isSupabaseConfigured, supabase } from "./supabase";
 
@@ -171,27 +172,6 @@ export function toRow(p: ShopProduct) {
 }
 
 /**
- * Each category's available renders, so fallback products can be given
- * different images instead of every tray showing the same photograph.
- */
-const categoryImages = new Map(
-  categories.map((c) => [
-    c.id,
-    [...new Set([c.thumb, c.heroImage, ...c.secondaryImages])].filter(Boolean),
-  ])
-);
-
-/** Rotates through a category's renders as its products are laid out. */
-const seenPerCategory = new Map<string, number>();
-function nextImageFor(categoryId: string) {
-  const pool = categoryImages.get(categoryId);
-  if (!pool?.length) return "/gallery/studio-trays-stack.webp";
-  const seen = seenPerCategory.get(categoryId) ?? 0;
-  seenPerCategory.set(categoryId, seen + 1);
-  return pool[seen % pool.length];
-}
-
-/**
  * The print catalogue as sellable rows, used until Supabase is configured and
  * as the fallback if it ever fails. No prices exist in the print data, so
  * these render as "price on request" rather than as free.
@@ -227,7 +207,7 @@ export const fallbackProducts: ShopProduct[] = allProducts.map((p, i) => ({
   caseWeightKg: null,
   cartonSize: null,
   stockStatus: "in_stock",
-  images: [nextImageFor(p.categoryId)],
+  images: imagePairFor(p.categoryId),
   isPublished: true,
   isFeatured: i < 6,
   sortOrder: i,

@@ -18,8 +18,12 @@
   --color-bio-paper: #efe8d8;
   --color-line: #e3ded2;
 
+  --color-brand-tint: #fbeef0;
+  --color-ink-muted: #6b665d;
+
   --animate-marquee: marquee 32s linear infinite;
   --animate-fade-up: fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-sheen: sheen 2.6s ease-in-out infinite;
 
   @keyframes marquee {
     from {
@@ -38,6 +42,42 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+  @keyframes sheen {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
+/**
+ * The fixed header's height, published so anything that has to sit clear of it
+ * — the sticky filter bar, a scroll-margin — can read it rather than guess.
+ * The announcement strip is dismissible, so the height is two parts and the
+ * strip's own component clears `--bar-h` by setting the data attribute.
+ */
+:root {
+  /* Zero until the strip actually renders, which is a paint later than this
+     stylesheet — starting at its full height would leave one frame of gap. */
+  --bar-h: 0rem;
+  --nav-h: 4rem;
+  --header-h: calc(var(--bar-h) + var(--nav-h));
+}
+
+:root[data-announcement="shown"] {
+  --bar-h: 2.25rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --nav-h: 4.5rem;
+  }
+  :root[data-announcement="shown"] {
+    --bar-h: 2.5rem;
   }
 }
 
@@ -98,9 +138,10 @@ html {
   border-radius: 2px;
 }
 
-/* On the dark Quality section and footer, brand red on near-black is too low
-   contrast to serve as a focus ring. */
+/* Brand red cannot serve as a focus ring on the dark Quality section and
+   footer, nor on the masthead — which is that exact red. */
 .bg-ink :focus-visible,
+header :focus-visible,
 footer :focus-visible {
   outline-color: var(--color-paper);
 }
@@ -208,5 +249,70 @@ html {
 
   tr {
     break-inside: avoid;
+  }
+}
+
+/* ---------------------------------------------------------------- surfaces */
+
+/**
+ * The studio panel every product photograph sits on.
+ *
+ * The catalogue renders are cut-outs on near-white, so a flat tint leaves them
+ * floating with no ground. A soft off-centre highlight with a warm falloff
+ * reads as a lit sweep instead, and the same panel under every image is what
+ * makes a grid of mixed photography look like one shoot.
+ */
+.media-panel {
+  background:
+    radial-gradient(120% 90% at 30% 12%, #ffffff 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(160deg, #f3f1ec 0%, #e9e6df 55%, #e2ded5 100%);
+}
+
+.media-panel-bio {
+  background:
+    radial-gradient(120% 90% at 30% 12%, #fffdf7 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(160deg, #f4eede 0%, #ece3cd 55%, #e4d9bf 100%);
+}
+
+.media-panel-ink {
+  background:
+    radial-gradient(120% 90% at 30% 10%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 60%),
+    linear-gradient(160deg, #23201a 0%, #17140f 100%);
+}
+
+/**
+ * The red accent rule under a section kicker. The brand is a single red and it
+ * was barely on the page; a 28px rule beside every eyebrow puts it on every
+ * screen without turning anything red.
+ */
+.eyebrow-rule::before {
+  content: "";
+  display: inline-block;
+  width: 26px;
+  height: 2px;
+  margin-right: 0.7rem;
+  vertical-align: 0.28em;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+/* Cards lift on hover rather than changing colour — cheaper to paint and it
+   keeps the product, not the container, as the thing that moves. */
+.card-lift {
+  transition:
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease;
+}
+
+@media (hover: hover) {
+  .card-lift:hover {
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-lift:hover {
+    transform: none;
   }
 }

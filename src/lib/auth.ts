@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, requireSupabase, supabase } from "./supabase";
 
@@ -10,7 +10,13 @@ export type AuthState = {
 };
 
 /**
- * Session plus admin membership.
+ * Session plus admin membership, held once for the whole app.
+ *
+ * Deliberately a module-level store rather than per-component state. Since
+ * pricing is gated on being signed in, every `Price` on the page asks this
+ * question — and on a shop grid of forty products, a hook that opened its own
+ * session check and its own `admins` query would fire eighty requests to draw
+ * one screen. One subscription answers all of them.
  *
  * Being signed in is not the same as being an admin: the gate is a row in
  * `public.admins`, checked here for the UI and enforced independently by row
@@ -18,48 +24,83 @@ export type AuthState = {
  * render — it is not what protects the data, so a tampered client gains
  * nothing.
  */
-export function useAuth(): AuthState {
-  const [session, setSession] = useState<Session | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
+let state: AuthState = {
+  session: null,
+  isAdmin: false,
+  // Nothing to wait for when there is no backend configured.
+  loading: isSupabaseConfigured,
+};
 
-  useEffect(() => {
-    if (!supabase) return;
-    const client = supabase;
-    let cancelled = false;
+const listeners = new Set<() => void>();
+let started = false;
 
-    const checkAdmin = async (next: Session | null) => {
-      if (!next) {
-        if (!cancelled) setIsAdmin(false);
-        return;
-      }
-      const { data } = await client
-        .from("admins")
-        .select("user_id")
-        .eq("user_id", next.user.id)
-        .maybeSingle();
-      if (!cancelled) setIsAdmin(Boolean(data));
-    };
+/** A new object only when something actually changed, so renders stay honest. */
+function patch(next: Partial<AuthState>) {
+  const merged = { ...state, ...next };
+  if (
+    merged.session === state.session &&
+    merged.isAdmin === state.isAdmin &&
+    merged.loading === state.loading
+  ) {
+    return;
+  }
+  state = merged;
+  listeners.forEach((l) => l());
+}
 
-    client.auth.getSession().then(async ({ data }) => {
-      if (cancelled) return;
-      setSession(data.session);
+/**
+ * Opens the session subscription the first time anything asks for auth, and
+ * never closes it: it lives as long as the tab does, and tearing it down when
+ * the last `Price` unmounts would only mean opening it again on the next page.
+ */
+function start() {
+  if (started || !supabase) return;
+  started = true;
+  const client = supabase;
+
+  const checkAdmin = async (next: Session | null) => {
+    if (!next) {
+      patch({ isAdmin: false });
+      return;
+    }
+    const { data } = await client
+      .from("admins")
+      .select("user_id")
+      .eq("user_id", next.user.id)
+      .maybeSingle();
+    patch({ isAdmin: Boolean(data) });
+  };
+
+  void client.auth
+    .getSession()
+    .then(async ({ data }) => {
+      patch({ session: data.session });
       await checkAdmin(data.session);
-      if (!cancelled) setLoading(false);
-    });
+    })
+    .catch(() => {
+      // An unreachable backend must not leave the whole site stuck on the
+      // loading placeholder: settle as signed out and let the page render.
+    })
+    .finally(() => patch({ loading: false }));
 
-    const { data: sub } = client.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
-      void checkAdmin(next);
-    });
+  client.auth.onAuthStateChange((_event, next) => {
+    patch({ session: next, loading: false });
+    void checkAdmin(next);
+  });
+}
 
-    return () => {
-      cancelled = true;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  start();
+  return () => {
+    listeners.delete(listener);
+  };
+};
 
-  return { session, isAdmin, loading };
+const snapshot = () => state;
+
+export function useAuth(): AuthState {
+  return useSyncExternalStore(subscribe, snapshot, snapshot);
 }
 
 /**

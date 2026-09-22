@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { companyInfo } from "../data/catalogue";
+import { TradeGate } from "../components/TradeGate";
 import {
   EmptyState,
   Notice,
   PageHeader,
+  PriceLock,
   ProductImage,
   Section,
   buttonClass,
@@ -13,6 +15,7 @@ import { fullName, useAuth } from "../lib/auth";
 import { cart, priceCart, useCartLines } from "../lib/cart";
 import { formatMoney, piecesPerUnit, pricePerPiece, useProducts } from "../lib/products";
 import { createOrder, payForOrder, type CustomerDetails } from "../lib/orders";
+import { useTradeAccess } from "../lib/trade";
 import { isPaymentConfigured, isSupabaseConfigured } from "../lib/supabase";
 
 type Errors = Partial<Record<"name" | "contact", string>>;
@@ -49,6 +52,7 @@ export function CartPage() {
   const lines = useCartLines();
   const { products } = useProducts();
   const { session } = useAuth();
+  const { unlocked } = useTradeAccess();
   const [details, setDetails] = useState<CustomerDetails>(emptyDetails);
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<string>("");
@@ -280,6 +284,8 @@ export function CartPage() {
                       <div className="text-right">
                         {l.unitPrice === null ? (
                           <p className="text-sm font-medium text-ink-soft">Price on request</p>
+                        ) : !unlocked ? (
+                          <PriceLock size="sm" />
                         ) : (
                           <>
                             <p className="font-display text-lg font-semibold text-ink">
@@ -344,35 +350,50 @@ export function CartPage() {
                     </dd>
                   </div>
                 )}
-                <div className="mt-1 flex justify-between border-t border-ink/10 pt-3">
-                  <dt className="text-ink-soft">Subtotal</dt>
-                  <dd className="font-medium text-ink">
-                    {formatMoney(totals.subtotal, totals.currency)}
-                  </dd>
-                </div>
-                {totals.discountTotal > 0 && (
-                  <div className="flex justify-between">
-                    <dt className="text-ink-soft">Discount</dt>
-                    <dd className="font-semibold text-brand">
-                      − {formatMoney(totals.discountTotal, totals.currency)}
-                    </dd>
+                {unlocked ? (
+                  <>
+                    <div className="mt-1 flex justify-between border-t border-ink/10 pt-3">
+                      <dt className="text-ink-soft">Subtotal</dt>
+                      <dd className="font-medium text-ink">
+                        {formatMoney(totals.subtotal, totals.currency)}
+                      </dd>
+                    </div>
+                    {totals.discountTotal > 0 && (
+                      <div className="flex justify-between">
+                        <dt className="text-ink-soft">Discount</dt>
+                        <dd className="font-semibold text-brand">
+                          − {formatMoney(totals.discountTotal, totals.currency)}
+                        </dd>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <dt className="text-ink-soft">GST</dt>
+                      <dd className="font-medium text-ink">
+                        {formatMoney(totals.taxTotal, totals.currency)}
+                      </dd>
+                    </div>
+                    <div className="mt-2 flex justify-between border-t border-ink/10 pt-3">
+                      <dt className="font-display text-base font-medium text-ink">Total</dt>
+                      <dd className="font-display text-xl font-semibold text-ink">
+                        {formatMoney(totals.total, totals.currency)}
+                      </dd>
+                    </div>
+                  </>
+                ) : (
+                  // An order can still be sent as an enquiry without an
+                  // account — what a signed-out visitor cannot do is see the
+                  // trade total, or pay it.
+                  <div className="mt-3 border-t border-ink/10 pt-4">
+                    <TradeGate compact />
+                    <p className="mt-3 text-xs leading-relaxed text-ink-soft">
+                      You can still send this list over as an enquiry and we&apos;ll come
+                      back with a quote.
+                    </p>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <dt className="text-ink-soft">GST</dt>
-                  <dd className="font-medium text-ink">
-                    {formatMoney(totals.taxTotal, totals.currency)}
-                  </dd>
-                </div>
-                <div className="mt-2 flex justify-between border-t border-ink/10 pt-3">
-                  <dt className="font-display text-base font-medium text-ink">Total</dt>
-                  <dd className="font-display text-xl font-semibold text-ink">
-                    {formatMoney(totals.total, totals.currency)}
-                  </dd>
-                </div>
               </dl>
 
-              {totals.quoteOnly.length > 0 && (
+              {unlocked && totals.quoteOnly.length > 0 && (
                 <div className="mt-5">
                   <Notice tone="warn">
                     {totals.quoteOnly.length}{" "}
@@ -492,7 +513,7 @@ export function CartPage() {
               </div>
 
               <div className="mt-6 flex flex-col gap-2">
-                {isPaymentConfigured && totals.payable && (
+                {isPaymentConfigured && totals.payable && unlocked && (
                   <button
                     type="button"
                     onClick={payNow}
@@ -510,7 +531,7 @@ export function CartPage() {
                   onClick={submitEnquiry}
                   disabled={busy !== null || !isSupabaseConfigured}
                   className={buttonClass(
-                    isPaymentConfigured && totals.payable ? "outline" : "primary",
+                    isPaymentConfigured && totals.payable && unlocked ? "outline" : "primary",
                     "w-full !py-3.5"
                   )}
                 >
@@ -520,7 +541,7 @@ export function CartPage() {
 
               <p role="status" aria-live="polite" className="mt-3 min-h-[1.25rem] text-center text-xs text-ink-soft">
                 {status ||
-                  (isPaymentConfigured && totals.payable
+                  (isPaymentConfigured && totals.payable && unlocked
                     ? "Card, UPI and netbanking via Razorpay. Payments are verified on our server."
                     : "Sent straight to our team — we usually reply within one working day.")}
               </p>

@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { loginHref, useTradeAccess } from "../lib/trade";
 import {
   compareAtPrice,
   effectivePrice,
@@ -57,14 +59,14 @@ export function PageHeader({
     <header
       className={`relative overflow-hidden bg-cover bg-center ${tones[tone]} ${
         backdrop
-          ? "flex min-h-[78svh] items-center pt-28 pb-16 md:min-h-[100svh] md:pt-36 md:pb-20"
-          : "pt-28 pb-14 md:pt-36 md:pb-20"
+          ? "flex min-h-[78svh] items-center pb-16 pt-[calc(var(--header-h)+3rem)] md:min-h-[100svh] md:pb-20 md:pt-[calc(var(--header-h)+5rem)]"
+          : "pb-14 pt-[calc(var(--header-h)+3rem)] md:pb-20 md:pt-[calc(var(--header-h)+4.5rem)]"
       }`}
       style={backdropStyle}
     >
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6">
         <p
-          className={`text-xs font-semibold uppercase tracking-[0.35em] ${
+          className={`eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] ${
             tone === "ink" ? "text-brand-light" : "text-brand"
           }`}
         >
@@ -98,9 +100,40 @@ export function Section({
   id?: string;
 }) {
   return (
-    <section id={id} className={`scroll-mt-24 py-20 md:py-28 ${className}`}>
+    <section
+      id={id}
+      className={`scroll-mt-[calc(var(--header-h)+1rem)] py-20 md:py-28 ${className}`}
+    >
       <div className="mx-auto max-w-6xl px-6">{children}</div>
     </section>
+  );
+}
+
+/**
+ * The small red label above a heading. It carries the brand's one colour onto
+ * every section of the site, which is most of what stops a cream-and-ink page
+ * reading as a template.
+ */
+export function Eyebrow({
+  children,
+  tone = "brand",
+  className = "",
+}: {
+  children: ReactNode;
+  tone?: "brand" | "light" | "muted";
+  className?: string;
+}) {
+  const tones = {
+    brand: "text-brand",
+    light: "text-brand-light",
+    muted: "text-ink-soft/70",
+  };
+  return (
+    <p
+      className={`eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] ${tones[tone]} ${className}`}
+    >
+      {children}
+    </p>
   );
 }
 
@@ -108,22 +141,39 @@ export function SectionHeading({
   kicker,
   title,
   intro,
+  tone = "paper",
+  action,
 }: {
   kicker?: string;
   title: ReactNode;
   intro?: ReactNode;
+  tone?: "paper" | "ink";
+  action?: ReactNode;
 }) {
   return (
-    <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-      <div>
-        {kicker && (
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-brand">{kicker}</p>
-        )}
-        <h2 className="font-display mt-4 max-w-xl text-balance text-3xl font-medium leading-[1.1] text-ink md:text-4xl">
+    <div className="mb-12 flex flex-col gap-5 md:flex-row md:items-end md:justify-between md:gap-10">
+      <div className="max-w-2xl">
+        {kicker && <Eyebrow tone={tone === "ink" ? "light" : "brand"}>{kicker}</Eyebrow>}
+        <h2
+          className={`font-display mt-4 max-w-xl text-balance text-3xl font-medium leading-[1.08] md:text-[2.6rem] ${
+            tone === "ink" ? "text-paper" : "text-ink"
+          }`}
+        >
           {title}
         </h2>
       </div>
-      {intro && <p className="max-w-sm text-balance text-ink-soft">{intro}</p>}
+      <div className="flex shrink-0 flex-col items-start gap-4 md:max-w-sm md:items-end">
+        {intro && (
+          <p
+            className={`text-balance text-sm leading-relaxed md:text-right ${
+              tone === "ink" ? "text-paper/65" : "text-ink-soft"
+            }`}
+          >
+            {intro}
+          </p>
+        )}
+        {action}
+      </div>
     </div>
   );
 }
@@ -132,7 +182,8 @@ export function SectionHeading({
 const variants = {
   primary: "bg-brand text-white hover:bg-brand-dark shadow-sm shadow-brand/30",
   ink: "bg-ink text-paper hover:bg-brand",
-  outline: "border border-ink/20 text-ink hover:border-ink/45",
+  outline: "border border-ink/20 text-ink hover:border-brand hover:text-brand",
+  soft: "border border-brand/25 bg-brand-tint text-brand-dark hover:border-brand/60 hover:bg-brand/10",
   quiet: "text-ink-soft hover:text-ink",
 } as const;
 
@@ -141,10 +192,49 @@ export type ButtonVariant = keyof typeof variants;
 export const buttonClass = (variant: ButtonVariant = "primary", extra = "") =>
   `inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${extra}`;
 
+function LockIcon({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <rect x="2.5" y="6" width="9" height="6.5" rx="1.6" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M4.75 6V4.4a2.25 2.25 0 0 1 4.5 0V6" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  );
+}
+
+/**
+ * The stand-in a signed-out visitor sees wherever a price would be.
+ *
+ * It is a link, not a notice: the one thing someone who just found a price
+ * they cannot read wants is the way to read it, and making them hunt for the
+ * sign-in button in the header loses them.
+ */
+export function PriceLock({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+  // The label shortens with the frame. A two-up grid on a phone gives a card
+  // about 130px of inner width, and "Sign in to unlock price" set in caps does
+  // not fit in it — a pill that wraps to three lines is worse than a short one.
+  const { pad, label, icon } = {
+    sm: { pad: "px-2.5 py-1 text-[10px]", label: "Unlock price", icon: 11 },
+    md: { pad: "px-2.5 py-1.5 text-[10px]", label: "Unlock price", icon: 11 },
+    lg: { pad: "px-4 py-2.5 text-xs", label: "Sign in to unlock price", icon: 14 },
+  }[size];
+
+  return (
+    <Link
+      to={loginHref()}
+      onClick={(e) => e.stopPropagation()}
+      className={`inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand-tint font-bold uppercase tracking-[0.06em] text-brand-dark transition hover:border-brand hover:bg-brand hover:text-white ${pad}`}
+    >
+      <LockIcon size={icon} />
+      {label}
+    </Link>
+  );
+}
+
 /**
  * A product's price.
  *
- * Three states matter and each has to be unmistakable: a plain price, a
+ * Four states matter and each has to be unmistakable: locked (a trade visitor
+ * who is not signed in — the default on a wholesale site), a plain price, a
  * discounted price (struck-through original beside it, so the saving is
  * visible rather than implied), and no price at all — which is "on request",
  * never "free" or a blank space.
@@ -156,6 +246,7 @@ export function Price({
   product: ShopProduct;
   size?: "sm" | "md" | "lg";
 }) {
+  const { unlocked, loading } = useTradeAccess();
   const now = effectivePrice(product);
   const was = compareAtPrice(product);
 
@@ -165,6 +256,19 @@ export function Price({
     lg: { now: "text-3xl", was: "text-base", unit: "text-sm" },
   }[size];
 
+  if (loading) {
+    return (
+      <span
+        aria-hidden="true"
+        className={`inline-block h-5 w-28 animate-sheen rounded-full bg-ink/8 ${
+          size === "lg" ? "h-8 w-40" : ""
+        }`}
+      />
+    );
+  }
+
+  // A line with no price is "on request" whether or not anyone is signed in —
+  // there is nothing behind the lock to unlock.
   if (now === null) {
     return (
       <span className={`font-display ${scale.now} font-medium text-ink-soft`}>
@@ -172,6 +276,8 @@ export function Price({
       </span>
     );
   }
+
+  if (!unlocked) return <PriceLock size={size} />;
 
   return (
     <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
@@ -182,7 +288,7 @@ export function Price({
         <>
           <s className={`${scale.was} text-ink-soft/70`}>{formatMoney(was, product.currency)}</s>
           <span
-            className={`rounded-full bg-brand/10 px-2 py-0.5 ${scale.unit} font-bold text-brand`}
+            className={`rounded-full bg-brand px-2 py-0.5 ${scale.unit} font-bold text-white`}
           >
             {Math.round(((was - now) / was) * 100)}% off
           </span>
@@ -198,6 +304,8 @@ export function Price({
  *
  * Trays are bought by the case and compared by the piece, and a buyer who has
  * to divide 1,250 by 50 in their head to check a quote is being made to work.
+ * Behind the same gate as the price itself: quoting a per-piece rate to a
+ * signed-out visitor would publish the case price by multiplication.
  */
 export function PerPiece({
   product,
@@ -206,9 +314,18 @@ export function PerPiece({
   product: ShopProduct;
   className?: string;
 }) {
+  const { unlocked } = useTradeAccess();
   const piece = pricePerPiece(product);
   const pieces = piecesPerUnit(product);
   if (piece === null || pieces <= 1) return null;
+
+  if (!unlocked) {
+    return (
+      <p className={className}>
+        {pieces} pieces in a {product.priceUnit}
+      </p>
+    );
+  }
 
   return (
     <p className={className}>
@@ -347,37 +464,74 @@ export function Notice({
  * Product imagery.
  *
  * The catalogue photographs are cut-outs on transparency, so each sits on a
- * tinted panel — without it the product's white edge disappears into a cream
- * page and the silhouette goes with it.
+ * lit studio panel — without it the product's white edge disappears into a
+ * cream page and the silhouette goes with it. One panel under every frame is
+ * what makes a grid of mixed photography read as a single shoot.
  *
- * They fill the frame. Containing them kept every millimetre of a wide tray
- * but left thick bands of tint above and below it, which read as a broken
- * image rather than a considered one.
+ * Pass `hoverSrc` and the frame cross-fades to a second angle on hover, which
+ * is how a buyer scanning a grid gets a second look without opening anything.
  */
 export function ProductImage({
   src,
+  hoverSrc,
   alt,
   className = "",
+  frameClassName = "",
   ratio = "aspect-square",
   sizes,
+  panel = "studio",
+  eager = false,
+  children,
 }: {
   src: string | undefined;
+  hoverSrc?: string;
   alt: string;
+  /** Applied to the image, for per-card zoom. */
   className?: string;
+  /** Applied to the panel, for radius and ring overrides. */
+  frameClassName?: string;
   ratio?: string;
   sizes?: string;
+  panel?: "studio" | "bio" | "ink";
+  eager?: boolean;
+  /** Overlays — badges, a quick-add button — positioned against the frame. */
+  children?: ReactNode;
 }) {
+  const panels = {
+    studio: "media-panel",
+    bio: "media-panel-bio",
+    ink: "media-panel-ink",
+  };
+
   return (
-    <div className={`${ratio} overflow-hidden rounded-2xl bg-studio ${className}`}>
+    <div
+      className={`group/media relative ${ratio} overflow-hidden rounded-2xl ${panels[panel]} ${frameClassName}`}
+    >
       {src ? (
-        <img
-          src={src}
-          alt={alt}
-          loading="lazy"
-          decoding="async"
-          sizes={sizes}
-          className="h-full w-full object-cover"
-        />
+        <>
+          <img
+            src={src}
+            alt={alt}
+            loading={eager ? "eager" : "lazy"}
+            fetchPriority={eager ? "high" : undefined}
+            decoding="async"
+            sizes={sizes}
+            className={`h-full w-full object-cover transition-[opacity,transform,scale] duration-700 ease-out ${
+              hoverSrc ? "group-hover/media:opacity-0" : ""
+            } ${className}`}
+          />
+          {hoverSrc && (
+            <img
+              src={hoverSrc}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              decoding="async"
+              sizes={sizes}
+              className={`absolute inset-0 h-full w-full object-cover opacity-0 transition-[opacity,transform,scale] duration-700 ease-out group-hover/media:opacity-100 ${className}`}
+            />
+          )}
+        </>
       ) : (
         <div className="grid h-full w-full place-items-center text-ink-soft/40">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -386,6 +540,14 @@ export function ProductImage({
           </svg>
         </div>
       )}
+
+      {/* A hairline inside the radius. A border would sit outside the image and
+          fight the card's own edge; an inset ring reads as the panel's lip. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-ink/[0.07]"
+      />
+      {children}
     </div>
   );
 }

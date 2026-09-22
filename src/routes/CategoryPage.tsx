@@ -2,19 +2,18 @@ import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { categories, bioCategory } from "../data/catalogue";
+import { ProductCard } from "../components/ProductCard";
 import { ProductGroupCard } from "../components/ProductGroupCard";
+import { TradeGate } from "../components/TradeGate";
 import { Sustainability } from "../components/Sustainability";
 import { NotFoundPage } from "./NotFoundPage";
 import {
   EmptyState,
   PageHeader,
-  Price,
-  ProductImage,
   Section,
   SectionHeading,
   buttonClass,
 } from "../components/ui";
-import { cart } from "../lib/cart";
 import { useProducts } from "../lib/products";
 
 /** The priced rows for this category, so the page can link browse → buy. */
@@ -31,45 +30,20 @@ function CategoryShopStrip({ categoryId }: { categoryId: string }) {
         title="Priced by the case."
         intro="Add cases to your order and send it over as an enquiry, or pay online."
       />
-      <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
-        {inCategory.slice(0, 8).map((p) => (
-          <div
+      <div className="mb-8">
+        <TradeGate compact />
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-7 md:gap-y-14">
+        {inCategory.slice(0, 6).map((p) => (
+          <ProductCard
             key={p.code}
-            className="flex flex-col gap-3 rounded-3xl border border-ink/10 bg-white/70 p-4"
-          >
-            <Link to={`/shop/${encodeURIComponent(p.code)}`} className="group">
-              <ProductImage
-                src={p.images[0]}
-                alt={p.name}
-                className="transition-transform duration-500 group-hover:scale-[1.03]"
-                sizes="(max-width: 640px) 45vw, 22vw"
-              />
-            </Link>
-            <div className="flex flex-1 flex-col">
-              <p className="font-mono text-[11px] font-semibold text-brand-dark">{p.code}</p>
-              <Link
-                to={`/shop/${encodeURIComponent(p.code)}`}
-                className="mt-0.5 text-sm font-semibold leading-snug text-ink hover:text-brand"
-              >
-                {p.name}
-              </Link>
-              {p.size && <p className="text-xs text-ink-soft">{p.size}</p>}
-              <div className="mt-auto pt-3">
-                <Price product={p} size="sm" />
-                <button
-                  type="button"
-                  onClick={() => cart.add(p.code)}
-                  className={buttonClass("outline", "mt-3 w-full !px-3 !py-2 !text-xs")}
-                >
-                  Add a case
-                </button>
-              </div>
-            </div>
-          </div>
+            product={p}
+            sizes="(max-width: 640px) 46vw, (max-width: 1024px) 45vw, 32vw"
+          />
         ))}
       </div>
-      {inCategory.length > 8 && (
-        <div className="mt-8 flex justify-center">
+      {inCategory.length > 6 && (
+        <div className="mt-10 flex justify-center">
           <Link to="/shop" className={buttonClass("ink", "px-6 py-3")}>
             See all {inCategory.length} codes with prices
           </Link>

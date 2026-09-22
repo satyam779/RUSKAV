@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CertBadge, MadeInIndiaBadge } from "../components/icons/Badges";
+import { CertBadge, MadeInIndiaBadge, MakeInIndiaMark } from "../components/icons/Badges";
 import { Sustainability } from "../components/Sustainability";
 import { PageHeader, Section, SectionHeading, buttonClass } from "../components/ui";
 
@@ -89,6 +89,7 @@ export function AboutPage() {
               drinkware with the look of glass, and a bio-composite line made from crop
               residue that would otherwise be burnt.
             </p>
+            <MakeInIndiaMark width={180} className="mt-2" />
           </div>
 
           <div className="overflow-hidden rounded-[2rem] bg-studio">

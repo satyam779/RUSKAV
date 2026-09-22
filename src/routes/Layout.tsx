@@ -4,6 +4,7 @@ import { Outlet, ScrollRestoration, useLocation } from "react-router-dom";
 import { SiteHeader } from "../components/SiteHeader";
 import { Footer } from "../components/Footer";
 import { CartBar } from "../components/CartBar";
+import { CookieBanner } from "../components/CookieBanner";
 
 /**
  * Route titles. A single-page site got away with one <title>; separate pages
@@ -13,11 +14,11 @@ const TITLES: Record<string, string> = {
   "/": "RUSKAV Food Service Products | Trays, Dinnerware & Drinkware, Made in India",
   "/about": "About Ruskav | Food service manufacturing in India",
   "/products": "Product range | Ruskav Food Service Products",
-  "/shop": "Shop | Prices, case packs and discounts | Ruskav",
+  "/shop": "Wholesale shop | Trade prices, case packs and discounts | Ruskav",
   "/cart": "Your order | Ruskav",
   "/quality": "Quality & certification | Ruskav",
   "/contact": "Contact & distributor enquiries | Ruskav",
-  "/login": "Login | Ruskav",
+  "/login": "Trade login | Unlock wholesale pricing | Ruskav",
   "/admin": "Admin dashboard | Ruskav",
 };
 
@@ -33,7 +34,6 @@ function useDocumentTitle() {
 }
 
 export function Layout() {
-  const { pathname } = useLocation();
   useDocumentTitle();
 
   return (
@@ -45,7 +45,7 @@ export function Layout() {
         Skip to content
       </a>
 
-      <SiteHeader overHero={pathname === "/"} />
+      <SiteHeader />
 
       <main id="main">
         <Outlet />
@@ -53,6 +53,7 @@ export function Layout() {
 
       <Footer />
       <CartBar />
+      <CookieBanner />
       <ScrollRestoration />
     </MotionConfig>
   );

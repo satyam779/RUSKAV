@@ -30,12 +30,12 @@ Razorpay adds card payment on top.
 | `/about` | Company story, how a piece is made, sectors served, bio-composite line |
 | `/products` | All five ranges, plus a searchable index of every product code |
 | `/products/:categoryId` | One range: editorial, imagery, full specification tables |
-| `/shop` | Priced grid with search, range/rating filters, sorting, add-to-order |
+| `/shop` | Wholesale grid with search, range/rating filters, sorting, add-to-order |
 | `/shop/:code` | Single product: gallery, price, specs, colourways, quantity picker |
 | `/cart` | Line items, totals, customer details → enquiry or online payment |
 | `/quality` | Certifications, the four materials compared, what TÜV tests |
 | `/contact` | Enquiry form, contact routes, FAQs |
-| `/login` | Staff login (there are no customer accounts) |
+| `/login` | Trade login — unlocks pricing for customers, and the door for staff |
 | `/admin` | Products, pricing, discounts, images and orders |
 
 It is a single-page app with real URLs, so the host must rewrite unknown paths to
@@ -211,13 +211,57 @@ shown to the visitor rather than logged and hidden: nothing may say "sent"
 unless the row is actually there. When it saves they get the reference back, so
 both sides can quote the same one.
 
+## Trade pricing is gated
+
+This is a wholesale site, so prices are for account holders. Everything else —
+the range, the photography, sizes, case packs, materials, colourways, the full
+specification sheet — is open to anyone.
+
+A signed-out visitor sees a red **Unlock price** pill wherever a figure would
+be, the `TradeGate` panel explaining why, and no totals in the cart or the
+floating bar. They can still build a list and send it as an enquiry; what they
+cannot do is see the trade rate, or pay it online.
+
+- `src/lib/trade.ts` — `useTradeAccess()` is the single gate. `loginHref()`
+  builds the sign-in link carrying the page to come back to.
+- `src/components/ui.tsx` — `Price`, `PerPiece` and `PriceLock` read the gate,
+  so no page has to remember to.
+- `src/components/TradeGate.tsx` — the explanation, in a full panel or a
+  compact strip.
+
+Lines with no price at all still read **Price on request** to everyone: there is
+nothing behind the lock to unlock.
+
+**One thing to finish before launch.** The gate is the interface, not the
+database. `products` is fetched with `select("*")`, so a determined visitor can
+still read the `price` column straight from the Supabase REST endpoint with the
+anon key. If the price list genuinely must not leave the building, move it
+behind row level security — keep the public policy on a view without the money
+columns, and grant the full table to authenticated roles only. See
+**Security model** above.
+
+## Cookies
+
+`src/components/CookieBanner.tsx` asks once and never comes back. There is
+nothing to consent to beyond the essentials — the cart in `localStorage` and the
+Supabase session — so the notice says exactly that rather than offering a
+category picker for tracking that does not exist. The answer is stored under
+`ruskav:cookie-consent`; the floating cart bar stands down while the notice is
+on screen so the two never stack in the same corner of a phone.
+
+If analytics or an advertising pixel is ever added, it has to be loaded from the
+`accepted` branch — not on page load.
+
 ## How a product is presented
 
 Every surface shows the same facts in the same order, so a buyer moving from the
 grid to the page to the cart never has to re-learn the layout:
 
-- **Shop card** — code, stock, name, then size / case pack / material, then the
-  case price with the per-piece figure under it, minimum order and lead time.
+- **Shop card** (`src/components/ProductCard.tsx`, used by every grid on the
+  site) — a lit studio panel carrying the code, the stock and discount flags and
+  a second angle on hover; then the name, size / case pack / material, the
+  colourway dots, the gated price with the per-piece figure under it, one action
+  and the minimum order.
 - **Product page** — the same four headline facts under the title, a price block
   carrying per-piece, GST and HSN, and then one **Technical specification**
   sheet holding everything on file: identity, packing, materials, colourways,

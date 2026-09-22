@@ -119,7 +119,7 @@ export function Contact() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-brand">Get in touch</p>
+            <p className="eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] text-brand">Get in touch</p>
             <h2 className="font-display mt-4 text-balance text-4xl font-medium leading-[1.08] text-ink md:text-5xl">
               Distributor &amp; dealer enquiries welcome.
             </h2>
@@ -189,7 +189,7 @@ export function Contact() {
               transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
               className="rounded-[2rem] bg-white p-7 shadow-xl shadow-ink/5 md:p-9"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-brand">
+              <p className="eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
                 Enquiry received
               </p>
               <h3 className="font-display mt-4 text-3xl font-medium text-ink">

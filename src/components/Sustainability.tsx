@@ -14,7 +14,7 @@ export function Sustainability() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-bio-dark">{bioCategory.kicker}</p>
+            <p className="eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] text-bio-dark">{bioCategory.kicker}</p>
             <h2 className="font-display mt-4 text-balance text-4xl font-medium leading-[1.08] text-ink md:text-5xl">
               {bioCategory.tagline}
             </h2>

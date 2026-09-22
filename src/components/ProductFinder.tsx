@@ -63,7 +63,7 @@ export function ProductFinder() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-brand">Product finder</p>
+            <p className="eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] text-brand">Product finder</p>
             <h2 className="font-display mt-4 max-w-lg text-balance text-4xl font-medium leading-[1.08] text-ink md:text-5xl">
               Every code in the range, searchable.
             </h2>

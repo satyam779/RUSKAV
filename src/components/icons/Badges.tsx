@@ -123,3 +123,50 @@ export function MadeInIndiaBadge({ className = "" }: { className?: string }) {
     </span>
   );
 }
+
+/**
+ * The Make in India mark.
+ *
+ * The white ground was keyed out of the supplied artwork so it can sit
+ * straight on the paper without a sticker around it — but the lion is drawn in
+ * dark machinery, so on a dark section it needs its ground back. That is what
+ * `panel` is for: it puts the mark on a paper card rather than leaving a lion
+ * that has disappeared into the background.
+ *
+ * Distinct from `MadeInIndiaBadge`, which is the small tricolour pill that
+ * belongs in a row of certification chips. This is the logo, shown at a size
+ * where it reads as one.
+ */
+export function MakeInIndiaMark({
+  width = 150,
+  panel = false,
+  className = "",
+}: {
+  width?: number;
+  /** Give it a paper ground, for dark sections. */
+  panel?: boolean;
+  className?: string;
+}) {
+  const img = (
+    <img
+      src="/make-in-india.webp"
+      alt="Make in India — Ruskav products are proudly made in India."
+      width={246}
+      height={168}
+      loading="lazy"
+      decoding="async"
+      style={{ width, height: "auto" }}
+      className="block max-w-full"
+    />
+  );
+
+  if (!panel) return <div className={className}>{img}</div>;
+
+  return (
+    <div
+      className={`inline-block rounded-2xl bg-paper px-4 py-3 shadow-lg shadow-black/20 ${className}`}
+    >
+      {img}
+    </div>
+  );
+}
