@@ -5,7 +5,10 @@ export function Sustainability() {
   const [imgA, imgB, imgC] = bioCategory.secondaryImages;
 
   return (
-    <section id={bioCategory.id} className="scroll-mt-20 bg-bio-paper py-24 md:py-32">
+    <section
+      id={bioCategory.id}
+      className="scroll-mt-[calc(var(--header-h)+1rem)] bg-bio-paper py-14 sm:py-20 md:py-32"
+    >
       <div className="mx-auto max-w-6xl px-6">
         <div className="grid gap-14 md:grid-cols-2 md:gap-16">
           <motion.div

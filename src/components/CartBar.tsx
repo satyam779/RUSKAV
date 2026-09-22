@@ -5,10 +5,14 @@ import { useConsentPending } from "./CookieBanner";
 import { cart, priceCart, useCartLines } from "../lib/cart";
 import { useProducts, formatMoney } from "../lib/products";
 import { useTradeAccess } from "../lib/trade";
+import { useTier } from "../lib/tier";
 
 /** The routes where the floating bar would cover the thing it summarises. */
 const HIDDEN_ON = (pathname: string) =>
-  pathname === "/cart" || pathname.startsWith("/admin") || pathname === "/login";
+  pathname === "/cart" ||
+  pathname.startsWith("/admin") ||
+  pathname === "/login" ||
+  pathname === "/account";
 
 /**
  * Whether the floating bar is on screen, for the footer to pad itself past it.
@@ -39,8 +43,9 @@ export function CartBar() {
 
   const consentPending = useConsentPending();
   const { unlocked } = useTradeAccess();
+  const { tier } = useTier();
 
-  const totals = priceCart(lines, products);
+  const totals = priceCart(lines, products, tier.discountPercent);
   // The cookie notice takes the same corner on a phone. It is answered once
   // and never returns, so the bar waits rather than stacking behind it.
   const visible = totals.itemCount > 0 && !HIDDEN_ON(pathname) && !consentPending;

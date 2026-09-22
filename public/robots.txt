@@ -4,4 +4,9 @@ Allow: /
 # The 300 hero frames are decorative and add nothing to the index.
 Disallow: /Products%20Images/
 
+# Behind sign-in — a crawler only ever sees the redirect.
+Disallow: /account
+Disallow: /admin
+Disallow: /login
+
 Sitemap: https://www.ruskav.com/sitemap.xml

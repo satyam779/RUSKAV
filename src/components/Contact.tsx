@@ -5,7 +5,13 @@ import { Link } from "react-router-dom";
 import { fullName, useAuth } from "../lib/auth";
 import { cart, priceCart, useCartLines } from "../lib/cart";
 import { useProducts } from "../lib/products";
-import { createEnquiry } from "../lib/enquiries";
+import { useTier } from "../lib/tier";
+import {
+  BUSINESS_TYPES,
+  createEnquiry,
+  TIER_REQUESTS,
+  TIMELINES,
+} from "../lib/enquiries";
 import { isSupabaseConfigured } from "../lib/supabase";
 
 const interests = [...categories.map((c) => c.shortName), bioCategory.shortName, "General enquiry"];
@@ -28,24 +34,70 @@ function validateContact(value: string) {
 }
 
 const fieldClass =
-  "rounded-xl border border-ink/12 bg-paper-dim/60 px-4 py-3 text-sm text-ink transition placeholder:text-ink-soft/60 focus:border-brand";
+  "w-full rounded-xl border border-ink/12 bg-paper-dim/60 px-4 py-3 text-sm text-ink transition placeholder:text-ink-soft/60 focus:border-brand";
 const errorFieldClass = "border-brand bg-brand/[0.03]";
+
+/** A labelled control. The form has fourteen of them now; this is the shape. */
+function Field({
+  id,
+  label,
+  optional = false,
+  hint,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  optional?: boolean;
+  hint?: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium text-ink">
+        {label}
+        {optional && <span className="font-normal text-ink-soft/70"> (optional)</span>}
+      </label>
+      {children}
+      {error ? (
+        <p id={`${id}-error`} className="text-xs font-medium text-brand">
+          {error}
+        </p>
+      ) : (
+        hint && <p className="text-[11px] leading-relaxed text-ink-soft/80">{hint}</p>
+      )}
+    </div>
+  );
+}
 
 export function Contact() {
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [contact, setContact] = useState("");
   const [interest, setInterest] = useState(interests[0]);
+  const [city, setCity] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [gstin, setGstin] = useState("");
+  const [businessType, setBusinessType] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [timeline, setTimeline] = useState("");
+  const [tierRequested, setTierRequested] = useState("");
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState("");
   const [reference, setReference] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  // Five fields are enough to answer. The rest sharpen the answer, so they are
+  // offered rather than demanded — a quote form long enough to feel like an
+  // application is one people abandon.
+  const [showDetail, setShowDetail] = useState(false);
 
   const { session } = useAuth();
   const cartLines = useCartLines();
   const { products } = useProducts();
-  const totals = priceCart(cartLines, products);
+  const { tier } = useTier();
+  const totals = priceCart(cartLines, products, tier.discountPercent);
   const items = totals.lines.map((l) => l.product);
 
   // Prefill from the account, without overwriting anything already typed.
@@ -71,6 +123,13 @@ export function Contact() {
     setName("");
     setCompany("");
     setContact("");
+    setCity("");
+    setStateName("");
+    setGstin("");
+    setBusinessType("");
+    setQuantity("");
+    setTimeline("");
+    setTierRequested("");
     setMessage("");
     setStatus("");
   };
@@ -98,6 +157,13 @@ export function Contact() {
         interest,
         message,
         productCodes: items.map((p) => p.code),
+        city,
+        state: stateName,
+        gstin,
+        businessType,
+        quantity,
+        timeline,
+        tierRequested,
       });
       setReference(saved.reference);
       setStatus("");
@@ -110,7 +176,10 @@ export function Contact() {
   };
 
   return (
-    <section id="contact" className="scroll-mt-24 bg-paper-dim py-24 md:py-32">
+    <section
+      id="contact"
+      className="scroll-mt-[calc(var(--header-h)+1rem)] bg-paper-dim py-14 sm:py-20 md:py-32"
+    >
       <div className="mx-auto max-w-6xl px-6">
         <div className="grid gap-14 md:grid-cols-[0.9fr_1.1fr] md:gap-16">
           <motion.div
@@ -121,7 +190,7 @@ export function Contact() {
           >
             <p className="eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] text-brand">Get in touch</p>
             <h2 className="font-display mt-4 text-balance text-4xl font-medium leading-[1.08] text-ink md:text-5xl">
-              Distributor &amp; dealer enquiries welcome.
+              Ask us for a price.
             </h2>
             <p className="mt-5 max-w-sm text-balance leading-relaxed text-ink-soft">
               Tell us what you&apos;re serving and how much of it — we&apos;ll get back with
@@ -190,15 +259,39 @@ export function Contact() {
               className="rounded-[2rem] bg-white p-7 shadow-xl shadow-ink/5 md:p-9"
             >
               <p className="eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
-                Enquiry received
+                Quote request received
               </p>
               <h3 className="font-display mt-4 text-3xl font-medium text-ink">
                 Thank you — that&apos;s with us.
               </h3>
               <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-soft">
-                It is in front of our team now. We&apos;ll come back to you with specifications,
-                MOQs and pricing.
+                It is in front of our team now. We&apos;ll come back with specifications, MOQs
+                and a price against this reference — and if you asked to be set up as a
+                dealer, with the band we can put you on.
               </p>
+              {session ? (
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-soft">
+                  The quote will appear in{" "}
+                  <Link
+                    to="/account"
+                    className="font-semibold text-brand underline-offset-2 hover:underline"
+                  >
+                    your account
+                  </Link>{" "}
+                  as soon as we&apos;ve priced it, and we&apos;ll reply to you directly too.
+                </p>
+              ) : (
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-soft">
+                  We&apos;ll reply to the address you gave us.{" "}
+                  <Link
+                    to="/login"
+                    className="font-semibold text-brand underline-offset-2 hover:underline"
+                  >
+                    Create an account
+                  </Link>{" "}
+                  and future quotes land in it, where you can read them back any time.
+                </p>
+              )}
               <div className="mt-7 rounded-2xl bg-brand/[0.05] px-5 py-4">
                 <p className="text-xs uppercase tracking-wider text-ink-soft/70">Your reference</p>
                 <p className="font-display mt-1 text-2xl font-semibold text-brand-dark">
@@ -224,10 +317,7 @@ export function Contact() {
               className="rounded-[2rem] bg-white p-7 shadow-xl shadow-ink/5 md:p-9"
             >
               <div className="grid gap-5 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="enq-name" className="text-sm font-medium text-ink">
-                    Name
-                  </label>
+                <Field id="enq-name" label="Name" error={errors.name}>
                   <input
                     id="enq-name"
                     value={name}
@@ -237,16 +327,9 @@ export function Contact() {
                     className={`${fieldClass} ${errors.name ? errorFieldClass : ""}`}
                     placeholder="Your name"
                   />
-                  {errors.name && (
-                    <p id="enq-name-error" className="text-xs font-medium text-brand">
-                      {errors.name}
-                    </p>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="enq-company" className="text-sm font-medium text-ink">
-                    Company <span className="font-normal text-ink-soft/70">(optional)</span>
-                  </label>
+                </Field>
+
+                <Field id="enq-company" label="Company" optional>
                   <input
                     id="enq-company"
                     value={company}
@@ -254,46 +337,185 @@ export function Contact() {
                     className={fieldClass}
                     placeholder="Business / organisation"
                   />
-                </div>
+                </Field>
               </div>
 
-              <div className="mt-5 flex flex-col gap-1.5">
-                <label htmlFor="enq-contact" className="text-sm font-medium text-ink">
-                  Email or phone
-                </label>
-                <input
-                  id="enq-contact"
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  aria-invalid={!!errors.contact}
-                  aria-describedby={errors.contact ? "enq-contact-error" : undefined}
-                  className={`${fieldClass} ${errors.contact ? errorFieldClass : ""}`}
-                  placeholder="How should we reach you?"
-                />
-                {errors.contact && (
-                  <p id="enq-contact-error" className="text-xs font-medium text-brand">
-                    {errors.contact}
-                  </p>
-                )}
+              <div className="mt-5">
+                <Field id="enq-contact" label="Email or phone" error={errors.contact}>
+                  <input
+                    id="enq-contact"
+                    value={contact}
+                    onChange={(e) => setContact(e.target.value)}
+                    aria-invalid={!!errors.contact}
+                    aria-describedby={errors.contact ? "enq-contact-error" : undefined}
+                    className={`${fieldClass} ${errors.contact ? errorFieldClass : ""}`}
+                    placeholder="How should we reach you?"
+                  />
+                </Field>
               </div>
 
-              <div className="mt-5 flex flex-col gap-1.5">
-                <label htmlFor="enq-interest" className="text-sm font-medium text-ink">
-                  Interested in
-                </label>
-                <select
-                  id="enq-interest"
-                  value={interest}
-                  onChange={(e) => setInterest(e.target.value)}
-                  className={fieldClass}
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                <Field id="enq-interest" label="Interested in">
+                  <select
+                    id="enq-interest"
+                    value={interest}
+                    onChange={(e) => setInterest(e.target.value)}
+                    className={fieldClass}
+                  >
+                    {interests.map((i) => (
+                      <option key={i} value={i}>
+                        {i}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field id="enq-quantity" label="Roughly how much" optional>
+                  <input
+                    id="enq-quantity"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    className={fieldClass}
+                    placeholder="About 40 cases a month"
+                  />
+                </Field>
+              </div>
+
+              <div className="mt-5">
+                <Field id="enq-message" label="What you need" optional>
+                  <textarea
+                    id="enq-message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    rows={4}
+                    className={`resize-y ${fieldClass}`}
+                    placeholder="Sizes, colourways, delivery city, anything else we should know…"
+                  />
+                </Field>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-ink/10 bg-paper-dim/50 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDetail((v) => !v)}
+                  aria-expanded={showDetail}
+                  className="flex w-full items-center justify-between gap-3 text-left"
                 >
-                  {interests.map((i) => (
-                    <option key={i} value={i}>
-                      {i}
-                    </option>
-                  ))}
-                </select>
+                  <span>
+                    <span className="block text-sm font-semibold text-ink">
+                      {showDetail ? "Extra detail" : "Add a few more details"}
+                    </span>
+                    <span className="block text-xs text-ink-soft">
+                      Optional — but it gets you a firm price instead of a range.
+                    </span>
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={`shrink-0 text-brand transition-transform ${
+                      showDetail ? "rotate-180" : ""
+                    }`}
+                  >
+                    &#9662;
+                  </span>
+                </button>
               </div>
+
+              {showDetail && (
+                <>
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                <Field id="enq-city" label="Delivery city" optional>
+                  <input
+                    id="enq-city"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    autoComplete="address-level2"
+                    className={fieldClass}
+                    placeholder="Bangalore"
+                  />
+                </Field>
+
+                <Field id="enq-state" label="State" optional>
+                  <input
+                    id="enq-state"
+                    value={stateName}
+                    onChange={(e) => setStateName(e.target.value)}
+                    autoComplete="address-level1"
+                    className={fieldClass}
+                    placeholder="Karnataka"
+                  />
+                </Field>
+              </div>
+
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                <Field id="enq-business" label="Type of business" optional>
+                  <select
+                    id="enq-business"
+                    value={businessType}
+                    onChange={(e) => setBusinessType(e.target.value)}
+                    className={fieldClass}
+                  >
+                    {BUSINESS_TYPES.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field
+                  id="enq-gstin"
+                  label="GSTIN"
+                  optional
+                  hint="Speeds up a formal quote. Leave it blank if you don't have one."
+                >
+                  <input
+                    id="enq-gstin"
+                    value={gstin}
+                    onChange={(e) => setGstin(e.target.value)}
+                    className={`${fieldClass} font-mono uppercase`}
+                    placeholder="29AAAAA0000A1Z5"
+                  />
+                </Field>
+              </div>
+
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                <Field id="enq-timeline" label="When you need it" optional>
+                  <select
+                    id="enq-timeline"
+                    value={timeline}
+                    onChange={(e) => setTimeline(e.target.value)}
+                    className={fieldClass}
+                  >
+                    {TIMELINES.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field
+                  id="enq-tier"
+                  label="How you'd buy"
+                  optional
+                  hint="Decides which trade band we quote you on."
+                >
+                  <select
+                    id="enq-tier"
+                    value={tierRequested}
+                    onChange={(e) => setTierRequested(e.target.value)}
+                    className={fieldClass}
+                  >
+                    {TIER_REQUESTS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+                </>
+              )}
 
               {items.length > 0 && (
                 <div className="mt-5 rounded-2xl border border-brand/20 bg-brand/[0.04] p-4">
@@ -337,30 +559,17 @@ export function Contact() {
                 </div>
               )}
 
-              <div className="mt-5 flex flex-col gap-1.5">
-                <label htmlFor="enq-message" className="text-sm font-medium text-ink">
-                  Message <span className="font-normal text-ink-soft/70">(optional)</span>
-                </label>
-                <textarea
-                  id="enq-message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={4}
-                  className={`resize-y ${fieldClass}`}
-                  placeholder="Quantities, formats, delivery city…"
-                />
-              </div>
-
               <button
                 type="submit"
                 disabled={sending}
                 className="mt-6 w-full rounded-full bg-brand px-6 py-3.5 text-sm font-semibold text-white shadow-sm shadow-brand/30 transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {sending ? "Sending…" : "Send enquiry"}
+                {sending ? "Sending…" : "Request a quote"}
               </button>
 
               <p role="status" aria-live="polite" className="mt-3 min-h-[1.25rem] text-center text-xs text-ink-soft">
-                {status || "Goes straight to our team — we usually reply within one working day."}
+                {status ||
+                  "Goes straight to our team — we usually come back with pricing within one working day."}
               </p>
 
               {!isSupabaseConfigured && (

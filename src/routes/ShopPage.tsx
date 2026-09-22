@@ -12,6 +12,7 @@ import {
   buttonClass,
 } from "../components/ui";
 import { effectivePrice, useProducts } from "../lib/products";
+import { useAuth } from "../lib/auth";
 
 type SortKey = "featured" | "price-asc" | "price-desc" | "name";
 
@@ -58,11 +59,13 @@ function Chip({
 
 export function ShopPage() {
   const { products, loading, usingFallback } = useProducts();
+  const { isAdmin } = useAuth();
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [cert, setCert] = useState<CertKind | null>(null);
   const [sort, setSort] = useState<SortKey>("featured");
   const [discountOnly, setDiscountOnly] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   /** How many codes sit in each range, so the filter pills carry a number. */
   const countsByCategory = useMemo(() => {
@@ -115,6 +118,8 @@ export function ShopPage() {
     setDiscountOnly(false);
   };
   const filtersActive = Boolean(query.trim() || categoryId || cert || discountOnly);
+  /** What the badge on the Filters button counts — the search box speaks for itself. */
+  const activeCount = [categoryId, cert, discountOnly || null].filter(Boolean).length;
 
   return (
     <>
@@ -134,29 +139,37 @@ export function ShopPage() {
           <div className="mb-8">
             <Notice tone="warn">
               <strong className="font-semibold">Showing the print catalogue.</strong> Live
-              pricing isn&apos;t connected yet, so these lines are listed as price-on-request.
-              You can still build an order and send it to us as an enquiry.
+              pricing isn&apos;t reachable right now, so these lines are listed as
+              price-on-request. You can still build an order and send it to us as an
+              enquiry.
             </Notice>
           </div>
         )}
 
-        {/* The filter bar follows the grid down. On a catalogue this long, a
-            buyer who has scrolled six rows should not have to scroll back up
-            to change range. */}
-        <div className="print-hide sticky top-[calc(var(--header-h)+0.5rem)] z-30 -mx-2 rounded-3xl border border-ink/10 bg-paper/95 px-2 py-2 backdrop-blur-md md:mx-0 md:border-transparent md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
-          <div className="rounded-3xl border border-ink/8 bg-white p-4 shadow-[0_10px_30px_-22px_rgba(23,20,15,0.5)] md:p-5">
-            <div className="flex flex-col gap-4">
-              <div className="relative">
+        {products.length > 0 && (
+          <>
+        {/* One row when it is stuck to the top, because a filter panel that
+            covers the products it is filtering is not helping. The chips are
+            a tap away and stay open once opened. */}
+        <div className="print-hide z-30 md:sticky md:top-[calc(var(--header-h)+0.5rem)]">
+          <div className="rounded-2xl border border-ink/8 bg-white/95 p-2.5 shadow-[0_10px_30px_-22px_rgba(23,20,15,0.5)] backdrop-blur-md sm:p-3">
+            <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
                 <svg
-                  width="18"
-                  height="18"
+                  width="17"
+                  height="17"
                   viewBox="0 0 20 20"
                   fill="none"
                   aria-hidden="true"
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft/60"
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft/60"
                 >
                   <circle cx="9" cy="9" r="5.5" stroke="currentColor" strokeWidth="1.5" />
-                  <path d="m13.5 13.5 3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path
+                    d="m13.5 13.5 3.5 3.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
                 </svg>
                 <label htmlFor="shop-search" className="sr-only">
                   Search the shop by code, size or description
@@ -172,82 +185,143 @@ export function ShopPage() {
                       setQuery("");
                     }
                   }}
-                  placeholder='Search "tray", "12 x 16" or "RT1014"'
-                  className="w-full rounded-2xl border border-ink/12 bg-paper-dim/50 py-3 pl-12 pr-4 text-sm text-ink transition placeholder:text-ink-soft/60 focus:border-brand"
+                  placeholder="Search a code, size or name"
+                  className="w-full rounded-xl border border-ink/12 bg-paper-dim/50 py-2.5 pl-10 pr-3 text-sm text-ink transition placeholder:text-ink-soft/60 focus:border-brand"
                 />
               </div>
 
-              {/* Two rows of pills scroll sideways rather than wrapping to four
-                  lines on a phone, which would push the grid off the screen. */}
-              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap md:overflow-visible">
-                <Chip active={!categoryId} onClick={() => setCategoryId(null)}>
-                  All ranges
-                </Chip>
-                {categories.map((c) => (
-                  <Chip
-                    key={c.id}
-                    active={categoryId === c.id}
-                    count={countsByCategory.get(c.id)}
-                    onClick={() => setCategoryId((v) => (v === c.id ? null : c.id))}
-                  >
-                    {c.shortName}
-                  </Chip>
-                ))}
-              </div>
-
-              <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap md:overflow-visible">
-                <span className="mr-1 shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-soft/50">
-                  Rated for
-                </span>
-                {certFilters.map((c) => (
-                  <Chip key={c} active={cert === c} onClick={() => setCert((v) => (v === c ? null : c))}>
-                    {CERT_LABEL[c]}
-                  </Chip>
-                ))}
-                <Chip active={discountOnly} onClick={() => setDiscountOnly((v) => !v)}>
-                  On offer
-                </Chip>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-ink/8 pt-3.5">
-              <p aria-live="polite" className="text-xs text-ink-soft">
-                <strong className="font-bold text-ink">{results.length}</strong>{" "}
-                {results.length === 1 ? "product" : "products"}
-                {filtersActive ? " match your filters" : " in the range"}
-              </p>
-              <div className="flex items-center gap-2">
-                {filtersActive && (
-                  <button
-                    type="button"
-                    onClick={reset}
-                    className="rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand transition hover:bg-brand/8"
-                  >
-                    Clear
-                  </button>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((v) => !v)}
+                aria-expanded={filtersOpen}
+                aria-controls="shop-filters"
+                className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-bold transition ${
+                  filtersOpen || activeCount > 0
+                    ? "border-brand bg-brand text-white"
+                    : "border-ink/12 text-ink-soft hover:border-brand hover:text-brand"
+                }`}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path
+                    d="M2 4h12M4 8h8M6.5 12h3"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="hidden sm:inline">Filters</span>
+                {activeCount > 0 && (
+                  <span className="grid h-4 min-w-4 place-items-center rounded-full bg-white/25 px-1 text-[10px]">
+                    {activeCount}
+                  </span>
                 )}
-                <label className="flex items-center gap-2 text-xs text-ink-soft">
-                  <span className="hidden sm:inline">Sort</span>
-                  <select
-                    value={sort}
-                    onChange={(e) => setSort(e.target.value as SortKey)}
-                    aria-label="Sort products"
-                    className="rounded-xl border border-ink/12 bg-paper-dim/50 px-3 py-2 text-xs font-medium text-ink transition focus:border-brand"
-                  >
-                    {sorts.map((s) => (
-                      <option key={s.key} value={s.key}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+              </button>
+
+              <label className="shrink-0">
+                <span className="sr-only">Sort products</span>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as SortKey)}
+                  className="rounded-xl border border-ink/12 bg-paper-dim/50 px-2.5 py-2.5 text-xs font-medium text-ink transition focus:border-brand"
+                >
+                  {sorts.map((s) => (
+                    <option key={s.key} value={s.key}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
+
+            {filtersOpen && (
+              <div id="shop-filters" className="mt-3 flex flex-col gap-3 border-t border-ink/8 pt-3">
+                {/* The pills scroll sideways rather than wrapping to four lines
+                    on a phone, which would push the grid off the screen. */}
+                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap md:overflow-visible">
+                  <Chip active={!categoryId} onClick={() => setCategoryId(null)}>
+                    All ranges
+                  </Chip>
+                  {categories.map((c) => (
+                    <Chip
+                      key={c.id}
+                      active={categoryId === c.id}
+                      count={countsByCategory.get(c.id)}
+                      onClick={() => setCategoryId((v) => (v === c.id ? null : c.id))}
+                    >
+                      {c.shortName}
+                    </Chip>
+                  ))}
+                </div>
+
+                <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap md:overflow-visible">
+                  <span className="mr-1 shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-soft/50">
+                    Rated for
+                  </span>
+                  {certFilters.map((c) => (
+                    <Chip
+                      key={c}
+                      active={cert === c}
+                      onClick={() => setCert((v) => (v === c ? null : c))}
+                    >
+                      {CERT_LABEL[c]}
+                    </Chip>
+                  ))}
+                  <Chip active={discountOnly} onClick={() => setDiscountOnly((v) => !v)}>
+                    On offer
+                  </Chip>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Outside the sticky card: a count that follows you down the page is
+            noise, and it is the one line that can be read once and forgotten. */}
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <p aria-live="polite" className="text-xs text-ink-soft">
+            <strong className="font-bold text-ink">{results.length}</strong>{" "}
+            {results.length === 1 ? "product" : "products"}
+            {filtersActive ? " match your filters" : " in the range"}
+          </p>
+          {filtersActive && (
+            <button
+              type="button"
+              onClick={reset}
+              className="rounded-full border border-ink/12 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand transition hover:border-brand hover:bg-brand/5"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+          </>
+        )}
+
         {loading ? (
           <Spinner label="Loading the range" />
+        ) : products.length === 0 ? (
+          <div className="mt-8">
+            <EmptyState
+              title="The shop is being stocked."
+              body={
+                isAdmin
+                  ? "There are no published products yet. Add them on the dashboard and they appear here straight away."
+                  : "We're putting the priced range online. In the meantime, browse the full catalogue and tell us what you need — we'll quote it."
+              }
+            >
+              {isAdmin ? (
+                <Link to="/admin" className={buttonClass("primary")}>
+                  Add products
+                </Link>
+              ) : (
+                <Link to="/contact" className={buttonClass("primary")}>
+                  Request a quote
+                </Link>
+              )}
+              <Link to="/products" className={buttonClass("outline")}>
+                Browse the full range
+              </Link>
+            </EmptyState>
+          </div>
         ) : results.length === 0 ? (
           <div className="mt-8">
             <EmptyState
@@ -263,7 +337,7 @@ export function ShopPage() {
             </EmptyState>
           </div>
         ) : (
-          <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-7 md:gap-y-14">
+          <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-7 md:gap-y-14">
             {results.map((p, i) => (
               <ProductCard
                 key={p.code}

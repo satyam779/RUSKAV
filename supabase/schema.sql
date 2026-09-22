@@ -194,8 +194,9 @@ on conflict (id) do nothing;
 -- ---------------------------------------------------------- profiles: RLS
 alter table public.profiles enable row level security;
 
--- You may read yourself; an admin may read everyone. Nothing is writable from
--- the browser at all — the trigger is the only thing that maintains this table.
+-- You may read yourself; an admin may read everyone. The only column writable
+-- from the browser is the trade band, and only by an admin (see the tiers
+-- section at the end) — the trigger maintains everything else.
 drop policy if exists "people read their own profile" on public.profiles;
 create policy "people read their own profile" on public.profiles
   for select using (auth.uid() = id or public.is_admin());
@@ -419,3 +420,161 @@ create policy "admins change product images" on storage.objects
 drop policy if exists "admins delete product images" on storage.objects;
 create policy "admins delete product images" on storage.objects
   for delete using (bucket_id = 'product-images' and public.is_admin());
+
+-- ================================================================== tiers
+-- Trade bands. Wholesale is not one price list: a distributor moving pallets
+-- and a single cafeteria buying six cases do not pay the same, and the office
+-- has always handled that by quoting different numbers to different people.
+-- This makes the bands a thing the dashboard owns rather than a thing kept in
+-- somebody's head.
+--
+-- The discount stacks on top of whatever discount the product itself carries,
+-- so a seasonal offer and a dealer band compose rather than one overriding the
+-- other.
+create table if not exists public.customer_tiers (
+  key              text primary key,
+  label            text not null,
+  discount_percent numeric not null default 0
+                     check (discount_percent >= 0 and discount_percent < 100),
+  -- Shown to the buyer under their price, and to the admin in the picker.
+  description      text,
+  sort_order       int not null default 0,
+  is_active        boolean not null default true,
+  updated_at       timestamptz not null default now()
+);
+
+insert into public.customer_tiers (key, label, discount_percent, description, sort_order)
+values
+  ('regular',  'Regular',  0,  'List price. Every new account starts here.',        0),
+  ('dealer_c', 'Dealer C', 4,  'Occasional trade buyers and smaller institutions.', 1),
+  ('dealer_b', 'Dealer B', 8,  'Regular dealers ordering in volume.',               2),
+  ('dealer_a', 'Dealer A', 12, 'Appointed distributors on standing arrangements.',  3)
+on conflict (key) do nothing;
+
+drop trigger if exists customer_tiers_touch_updated_at on public.customer_tiers;
+create trigger customer_tiers_touch_updated_at
+  before update on public.customer_tiers
+  for each row execute function public.touch_updated_at();
+
+-- Which band an account is on. The foreign key is what stops a typo in the
+-- dashboard silently pricing someone at zero discount forever.
+alter table public.profiles
+  add column if not exists tier text not null default 'regular';
+
+alter table public.profiles
+  drop constraint if exists profiles_tier_fkey;
+alter table public.profiles
+  add constraint profiles_tier_fkey
+  foreign key (tier) references public.customer_tiers (key) on update cascade;
+
+-- Why they are on it: "agreed with Suresh, Mar 2026", "trial for 3 months".
+alter table public.profiles add column if not exists tier_note text;
+
+-- ------------------------------------------------------------- tiers: RLS
+alter table public.customer_tiers enable row level security;
+
+-- The whole band table is an internal document — a Dealer C has no business
+-- reading what Dealer A pays. Buyers get their own band through `my_tier()`
+-- instead, which is why that function is security definer.
+drop policy if exists "admins read tiers" on public.customer_tiers;
+create policy "admins read tiers" on public.customer_tiers
+  for select using (public.is_admin());
+
+drop policy if exists "admins write tiers" on public.customer_tiers;
+create policy "admins write tiers" on public.customer_tiers
+  for all using (public.is_admin()) with check (public.is_admin());
+
+-- Admins set the band; nothing else about a profile is writable from the
+-- browser, and the trigger stays the only thing that maintains the rest.
+drop policy if exists "admins update profiles" on public.profiles;
+create policy "admins update profiles" on public.profiles
+  for update using (public.is_admin()) with check (public.is_admin());
+
+-- The caller's own band, and only ever their own.
+create or replace function public.my_tier()
+returns table (key text, label text, discount_percent numeric)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select t.key, t.label, t.discount_percent
+  from public.profiles p
+  join public.customer_tiers t on t.key = p.tier
+  where p.id = auth.uid()
+    and t.is_active;
+$$;
+
+revoke all on function public.my_tier() from public;
+grant execute on function public.my_tier() to authenticated;
+
+-- ======================================================== enquiries: quoting
+-- The contact form became a request for a quote, so the row has to carry the
+-- things a quote is built from — where it ships, how much of it, how soon —
+-- and then the quote itself once the office has priced it.
+alter table public.enquiries add column if not exists city           text;
+alter table public.enquiries add column if not exists state          text;
+alter table public.enquiries add column if not exists gstin          text;
+-- dealer | distributor | institution | horeca | other
+alter table public.enquiries add column if not exists business_type  text;
+-- Free text on purpose: "about 40 cases a month" is a more useful answer than
+-- a number the sender had to round to fit a box.
+alter table public.enquiries add column if not exists quantity       text;
+-- immediate | 1_month | 3_months | planning
+alter table public.enquiries add column if not exists timeline       text;
+-- Which band they are asking to be put on, if any.
+alter table public.enquiries add column if not exists tier_requested text;
+
+-- The office's side of it.
+alter table public.enquiries add column if not exists quoted_amount   numeric;
+alter table public.enquiries add column if not exists quoted_currency text default 'INR';
+alter table public.enquiries add column if not exists quote_notes     text;
+alter table public.enquiries add column if not exists quoted_at       timestamptz;
+-- Set when quoting also moved the account onto a band, so the enquiry records
+-- the decision rather than only its consequence.
+alter table public.enquiries add column if not exists granted_tier    text;
+
+create index if not exists enquiries_status_idx on public.enquiries (status, created_at desc);
+
+-- =============================================== what a customer can read back
+-- The dashboard could quote an enquiry, and the customer had no way to see the
+-- quote: `enquiries` and `orders` were admin-read-only, so the account page had
+-- nothing to show. These two policies are what make /account possible.
+--
+-- Deliberately keyed on `user_id` alone, not on a matching email address. An
+-- enquiry sent as a guest carries no account, and letting a fresh sign-up claim
+-- every row that happens to share its email would turn the form into a way of
+-- reading other people's business — which is the exact thing the admin-only
+-- rule was there to prevent. A guest enquiry stays between the sender and the
+-- office, answered by email as it always was.
+drop policy if exists "people read their own enquiries" on public.enquiries;
+create policy "people read their own enquiries" on public.enquiries
+  for select using (user_id is not null and user_id = auth.uid());
+
+drop policy if exists "people read their own orders" on public.orders;
+create policy "people read their own orders" on public.orders
+  for select using (user_id is not null and user_id = auth.uid());
+
+-- Line items follow their order: if you may read the order, you may read what
+-- was on it.
+drop policy if exists "people read their own order items" on public.order_items;
+create policy "people read their own order items" on public.order_items
+  for select using (
+    exists (
+      select 1 from public.orders o
+      where o.id = order_items.order_id
+        and o.user_id is not null
+        and o.user_id = auth.uid()
+    )
+  );
+
+-- ====================================================== per-colour photography
+-- A tray comes in eleven colourways and the catalogue shows one of them. This
+-- maps a colour key to its own photograph, so pressing "Green" on the product
+-- page shows the green one rather than asking the buyer to imagine it.
+--
+-- jsonb rather than a child table: it is a handful of urls keyed by a colour
+-- the product already lists, it is always read with the product, and it is
+-- never queried across products.
+alter table public.products
+  add column if not exists color_images jsonb not null default '{}'::jsonb;

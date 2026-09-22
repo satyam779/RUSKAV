@@ -35,7 +35,7 @@ const cards = [
  */
 export function CategoryGrid() {
   return (
-    <section className="bg-paper-dim py-20 md:py-28">
+    <section className="bg-paper-dim py-14 sm:py-20 md:py-28">
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-12 flex flex-col gap-5 md:mb-14 md:flex-row md:items-end md:justify-between md:gap-10">
           <div className="max-w-2xl">

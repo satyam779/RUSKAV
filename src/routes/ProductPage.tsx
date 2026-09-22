@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { categories, CERT_LABEL, COLOR_HEX, COLOR_LABEL } from "../data/catalogue";
+import {
+  categories,
+  CERT_LABEL,
+  COLOR_HEX,
+  COLOR_LABEL,
+  type ColorKey,
+} from "../data/catalogue";
 import { CertBadge, MaterialBadge } from "../components/icons/Badges";
 import {
   Badge,
@@ -54,6 +60,36 @@ export function ProductPage() {
 
   if (loading && !product) return <Spinner label="Loading product" />;
   if (!product) return <NotFoundPage />;
+
+  /**
+   * Everything there is to look at, in one list: the gallery shots first, then
+   * a frame per photographed colourway.
+   *
+   * One list rather than two pieces of state, because the thumbnail strip and
+   * the colour swatches are two ways of asking for the same thing — and two
+   * selections that can disagree is how you end up showing the green tray with
+   * "Red" highlighted.
+   */
+  const frames: { src: string; label: string; color?: ColorKey }[] = [];
+  const seen = new Set<string>();
+  for (const src of product.images) {
+    if (src && !seen.has(src)) {
+      seen.add(src);
+      frames.push({ src, label: `View ${frames.length + 1}` });
+    }
+  }
+  for (const color of product.colors) {
+    const src = product.colorImages[color];
+    if (src && !seen.has(src)) {
+      seen.add(src);
+      frames.push({ src, label: COLOR_LABEL[color], color });
+    }
+  }
+  if (!frames.length) frames.push({ src: "", label: "No photograph yet" });
+
+  const current = frames[Math.min(activeImage, frames.length - 1)];
+  const photographedColors = frames.filter((f) => f.color).length;
+  const frameForColor = (color: ColorKey) => frames.findIndex((f) => f.color === color);
 
   const inCart = lines.find((l) => l.code === product.code)?.quantity ?? 0;
   const stock = STOCK_LABEL[product.stockStatus] ?? STOCK_LABEL.in_stock;
@@ -134,8 +170,8 @@ export function ProductPage() {
         <div className="grid gap-12 md:grid-cols-2 md:gap-16">
           <div>
             <ProductImage
-              src={product.images[activeImage] ?? product.images[0]}
-              alt={product.name}
+              src={current.src || undefined}
+              alt={current.color ? `${product.name} in ${current.label}` : product.name}
               ratio="aspect-square"
               frameClassName="rounded-[2rem]"
               panel={product.categoryId === "bio" ? "bio" : "studio"}
@@ -148,10 +184,10 @@ export function ProductPage() {
                 </span>
               )}
             </ProductImage>
-            {product.images.length > 1 && (
+            {frames.length > 1 && (
               <ul className="mt-4 flex flex-wrap gap-3">
-                {product.images.map((src, i) => (
-                  <li key={src}>
+                {frames.map((frame, i) => (
+                  <li key={frame.src}>
                     <button
                       type="button"
                       onClick={() => setActiveImage(i)}
@@ -160,13 +196,13 @@ export function ProductPage() {
                         i === activeImage ? "border-brand" : "border-transparent hover:border-ink/20"
                       }`}
                     >
-                      <span className="sr-only">Show image {i + 1}</span>
+                      <span className="sr-only">Show {frame.label}</span>
                       <img
-                        src={src}
+                        src={frame.src}
                         alt=""
                         loading="lazy"
                         decoding="async"
-                        className="h-full w-full bg-studio object-cover"
+                        className="media-panel h-full w-full object-cover"
                       />
                     </button>
                   </li>
@@ -300,29 +336,77 @@ export function ProductPage() {
             {product.colors.length > 0 && (
               <div className="mt-8">
                 <p className="text-xs uppercase tracking-wider text-ink-soft/70">
-                  Available colourways
+                  {photographedColors > 0
+                    ? "Colourways — press one to see it"
+                    : "Available colourways"}
                 </p>
                 <ul className="mt-3 flex flex-wrap gap-3">
-                  {product.colors.map((c) => (
-                    <li key={c} className="flex flex-col items-center gap-1.5">
-                      {c === "transparent" ? (
-                        <span
-                          className="block h-8 w-8 rounded-full border border-ink/15"
-                          style={{
-                            background:
-                              "repeating-conic-gradient(from 0deg, #ffffff 0deg 90deg, #e7e4da 90deg 180deg)",
-                          }}
-                        />
-                      ) : (
-                        <span
-                          className="block h-8 w-8 rounded-full border border-ink/10 shadow-sm"
-                          style={{ background: COLOR_HEX[c] }}
-                        />
-                      )}
-                      <span className="text-[10px] text-ink-soft">{COLOR_LABEL[c]}</span>
-                    </li>
-                  ))}
+                  {product.colors.map((c) => {
+                    const frameIndex = frameForColor(c);
+                    const hasPhoto = frameIndex >= 0;
+                    const selected = hasPhoto && frameIndex === activeImage;
+
+                    const dot = (
+                      <span
+                        className={`block h-8 w-8 rounded-full border shadow-sm transition ${
+                          selected
+                            ? "border-brand ring-2 ring-brand ring-offset-2"
+                            : "border-ink/12"
+                        }`}
+                        style={{
+                          background:
+                            c === "transparent"
+                              ? "repeating-conic-gradient(from 0deg, #ffffff 0deg 90deg, #e7e4da 90deg 180deg)"
+                              : COLOR_HEX[c],
+                        }}
+                      />
+                    );
+
+                    return (
+                      <li key={c} className="flex flex-col items-center gap-1.5">
+                        {hasPhoto ? (
+                          <button
+                            type="button"
+                            onClick={() => setActiveImage(frameIndex)}
+                            aria-pressed={selected}
+                            className="group/swatch flex flex-col items-center gap-1.5"
+                          >
+                            <span className="relative block transition group-hover/swatch:scale-110">
+                              {dot}
+                              {/* A colour you can press has to look different
+                                  from one you cannot, or every swatch reads as
+                                  broken until you try them all. */}
+                              <span
+                                aria-hidden="true"
+                                className="absolute -bottom-0.5 -right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-brand text-[7px] font-bold text-white"
+                              >
+                                ●
+                              </span>
+                            </span>
+                            <span
+                              className={`text-[10px] ${
+                                selected ? "font-semibold text-brand" : "text-ink-soft"
+                              }`}
+                            >
+                              {COLOR_LABEL[c]}
+                            </span>
+                          </button>
+                        ) : (
+                          <>
+                            <span title={`${COLOR_LABEL[c]} — available to order`}>{dot}</span>
+                            <span className="text-[10px] text-ink-soft">{COLOR_LABEL[c]}</span>
+                          </>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
+                {photographedColors > 0 && photographedColors < product.colors.length && (
+                  <p className="mt-3 text-[11px] text-ink-soft/80">
+                    Colours marked with a dot are photographed. The rest are made to order
+                    in the same finish — ask us for a sample.
+                  </p>
+                )}
               </div>
             )}
 

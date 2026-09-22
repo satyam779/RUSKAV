@@ -20,6 +20,20 @@ import {
   type SpecRow,
 } from "../lib/products";
 import {
+  BUSINESS_TYPE_LABEL,
+  TIER_REQUEST_LABEL,
+  TIMELINE_LABEL,
+} from "../lib/enquiries";
+import {
+  FALLBACK_TIERS,
+  fetchTiers,
+  saveTier,
+  setCustomerTier,
+  toOption,
+  type TierOption,
+  type TierRow,
+} from "../lib/tiersAdmin";
+import {
   Badge,
   EmptyState,
   Notice,
@@ -28,6 +42,46 @@ import {
   Spinner,
   buttonClass,
 } from "../components/ui";
+
+/**
+ * The trade bands, loaded once and shared by the tabs that need them.
+ *
+ * Both the customer list and the enquiry desk put a band picker on screen, and
+ * a dashboard that fetched the same four rows twice on every visit would be
+ * making a point of it.
+ */
+function useTiers() {
+  const [tiers, setTiers] = useState<TierOption[]>(FALLBACK_TIERS);
+  const [rows, setRows] = useState<TierRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!supabase) return;
+    setLoading(true);
+    try {
+      const data = await fetchTiers();
+      setRows(data);
+      // An empty table means the migration has not been run; the seeded names
+      // are better than an empty dropdown.
+      if (data.length) setTiers(data.map(toOption));
+      setError(null);
+    } catch (err) {
+      setError(describeWriteError(err));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  return { tiers, rows, loading, error, reload: load };
+}
+
+const tierLabel = (tiers: TierOption[], key: string | null | undefined) =>
+  tiers.find((t) => t.key === key)?.label ?? key ?? "Regular";
 
 export type Range = { id: string; name: string };
 
@@ -166,6 +220,7 @@ function blankProduct(): ShopProduct {
     cartonSize: null,
     stockStatus: "in_stock",
     images: [],
+    colorImages: {},
     isPublished: true,
     isFeatured: false,
     sortOrder: 0,
@@ -205,6 +260,20 @@ function NumberField({
 
 // ------------------------------------------------------------ product editor
 
+/**
+ * Where one uploaded file lands in the bucket.
+ *
+ * Namespaced by product code and stamped, so re-uploading a file with the same
+ * name cannot overwrite another product's image. Module scope rather than the
+ * component body: it reads the clock and the RNG, and a linter is right to be
+ * suspicious of that inside a render.
+ */
+function storagePathFor(code: string, fileName: string) {
+  const ext = fileName.split(".").pop() ?? "jpg";
+  const safeCode = (code || "product").replace(/[^a-zA-Z0-9-_]/g, "");
+  return `${safeCode}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+}
+
 function ProductEditor({
   initial,
   ranges,
@@ -218,9 +287,14 @@ function ProductEditor({
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState<ShopProduct>(initial);
+  // Six fields make a listing that works. The other twenty-odd are real and
+  // stay reachable, but putting all of them in front of somebody adding a tray
+  // is what makes adding a tray feel like filing a return.
+  const [showAll, setShowAll] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [colorUploading, setColorUploading] = useState<ColorKey | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const isNew = !initial.id;
@@ -230,34 +304,37 @@ function ProductEditor({
   const toggleIn = <T,>(list: T[], value: T) =>
     list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 
+  /**
+   * Puts one file in the bucket and hands back its public url.
+   *
+   * Shared by the gallery uploader and the per-colour ones, because they do
+   * exactly the same job and only differ in where the url is then written.
+   */
+  const uploadOne = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      throw new Error(`${file.name} is not an image.`);
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error(`${file.name} is larger than 5 MB — please resize it first.`);
+    }
+    const path = storagePathFor(draft.code, file.name);
+
+    const client = requireSupabase();
+    const { error: uploadError } = await client.storage
+      .from("product-images")
+      .upload(path, file, { cacheControl: "31536000", upsert: false });
+    if (uploadError) throw uploadError;
+
+    return client.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+  };
+
   const uploadImages = async (files: FileList | null) => {
     if (!files?.length) return;
     setUploading(true);
     setError(null);
     try {
-      const client = requireSupabase();
       const urls: string[] = [];
-      for (const file of Array.from(files)) {
-        if (!file.type.startsWith("image/")) {
-          throw new Error(`${file.name} is not an image.`);
-        }
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error(`${file.name} is larger than 5 MB — please resize it first.`);
-        }
-        // Namespace by product code and timestamp so re-uploading a file with
-        // the same name cannot overwrite another product's image.
-        const ext = file.name.split(".").pop() ?? "jpg";
-        const safeCode = (draft.code || "product").replace(/[^a-zA-Z0-9-_]/g, "");
-        const path = `${safeCode}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
-
-        const { error: uploadError } = await client.storage
-          .from("product-images")
-          .upload(path, file, { cacheControl: "31536000", upsert: false });
-        if (uploadError) throw uploadError;
-
-        const { data } = client.storage.from("product-images").getPublicUrl(path);
-        urls.push(data.publicUrl);
-      }
+      for (const file of Array.from(files)) urls.push(await uploadOne(file));
       setDraft((d) => ({ ...d, images: [...d.images, ...urls] }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
@@ -266,6 +343,28 @@ function ProductEditor({
       if (fileRef.current) fileRef.current.value = "";
     }
   };
+
+  /** The photograph for one colourway. */
+  const uploadColorImage = async (color: ColorKey, file: File | undefined) => {
+    if (!file) return;
+    setColorUploading(color);
+    setError(null);
+    try {
+      const url = await uploadOne(file);
+      setDraft((d) => ({ ...d, colorImages: { ...d.colorImages, [color]: url } }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setColorUploading(null);
+    }
+  };
+
+  const clearColorImage = (color: ColorKey) =>
+    setDraft((d) => {
+      const next = { ...d.colorImages };
+      delete next[color];
+      return { ...d, colorImages: next };
+    });
 
   const save = async () => {
     setError(null);
@@ -316,7 +415,7 @@ function ProductEditor({
         </div>
       )}
 
-      {/* ------------------------------------------------------- identity */}
+      {/* ------------------------------------------- the six that make a listing */}
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5">
           <span className={label}>Product code *</span>
@@ -352,6 +451,57 @@ function ProductEditor({
           </select>
         </label>
         <label className="flex flex-col gap-1.5">
+          <span className={label}>Size</span>
+          <input
+            value={draft.size ?? ""}
+            onChange={(e) => set("size", e.target.value || null)}
+            className={field}
+            placeholder={'10" x 14"'}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={label}>Case pack (ea.)</span>
+          <NumberField
+            value={draft.casePack}
+            onChange={(v) => set("casePack", Math.max(1, v ?? 1))}
+            min="1"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={label}>Price per {draft.priceUnit}</span>
+          <NumberField
+            value={draft.price}
+            onChange={(v) => set("price", v)}
+            step="0.01"
+            min="0"
+            placeholder="Leave empty for on-request"
+          />
+        </label>
+      </div>
+
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-paper-dim/40 px-5 py-3.5">
+        <p className="text-xs text-ink-soft">
+          {showAll
+            ? "Everything else on file for this product."
+            : "That's enough to publish it. Specs, colourways, GST and dispatch are optional."}
+        </p>
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          aria-expanded={showAll}
+          className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-brand transition hover:underline"
+        >
+          {showAll ? "Hide the rest" : "Add more detail"}
+          <span aria-hidden="true" className={showAll ? "rotate-180" : ""}>
+            &#9662;
+          </span>
+        </button>
+      </div>
+
+      {showAll && (
+        <>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
           <span className={label}>Product line</span>
           <input
             value={draft.groupName ?? ""}
@@ -360,35 +510,24 @@ function ProductEditor({
             placeholder="Budget Tray"
           />
         </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={label}>Description</span>
+          <textarea
+            rows={2}
+            value={draft.description ?? ""}
+            onChange={(e) => set("description", e.target.value || null)}
+            className={`resize-y ${field}`}
+            placeholder="Shown on the product page, under the title."
+          />
+        </label>
       </div>
 
-      <label className="mt-4 flex flex-col gap-1.5">
-        <span className={label}>Description</span>
-        <textarea
-          rows={2}
-          value={draft.description ?? ""}
-          onChange={(e) => set("description", e.target.value || null)}
-          className={`resize-y ${field}`}
-          placeholder="Shown on the product page, under the title."
-        />
-      </label>
-
       {/* ---------------------------------------------------- commercials */}
-      <fieldset className="mt-8 rounded-2xl border border-ink/10 bg-paper-dim/40 p-5">
+      <fieldset className="mt-6 rounded-2xl border border-ink/10 bg-paper-dim/40 p-5">
         <legend className="px-2 font-display text-base font-medium text-ink">
           Price &amp; discount
         </legend>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="flex flex-col gap-1.5">
-            <span className={label}>Price per {draft.priceUnit}</span>
-            <NumberField
-              value={draft.price}
-              onChange={(v) => set("price", v)}
-              step="0.01"
-              min="0"
-              placeholder="Leave empty for on-request"
-            />
-          </label>
           <label className="flex flex-col gap-1.5">
             <span className={label}>MRP (struck through)</span>
             <NumberField value={draft.mrp} onChange={(v) => set("mrp", v)} step="0.01" min="0" />
@@ -466,23 +605,6 @@ function ProductEditor({
           Specification
         </legend>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="flex flex-col gap-1.5">
-            <span className={label}>Size</span>
-            <input
-              value={draft.size ?? ""}
-              onChange={(e) => set("size", e.target.value || null)}
-              className={field}
-              placeholder={'10" x 14"'}
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className={label}>Case pack (ea.)</span>
-            <NumberField
-              value={draft.casePack}
-              onChange={(v) => set("casePack", Math.max(1, v ?? 1))}
-              min="1"
-            />
-          </label>
           <label className="flex flex-col gap-1.5">
             <span className={label}>Material</span>
             <input
@@ -651,6 +773,79 @@ function ProductEditor({
           })}
         </ul>
 
+        {draft.colors.length > 0 && (
+          <div className="mt-6">
+            <span className={label}>Photo per colourway</span>
+            <p className="mt-1 text-xs text-ink-soft">
+              Optional. A colour with a photo becomes pressable on the product page and
+              swaps the main image; one without stays a swatch.
+            </p>
+            <ul className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {draft.colors.map((c) => {
+                const src = draft.colorImages[c];
+                const inputId = `color-image-${c}`;
+                return (
+                  <li
+                    key={c}
+                    className="flex items-center gap-3 rounded-2xl border border-ink/10 bg-white p-2.5"
+                  >
+                    <span className="media-panel relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl">
+                      {src ? (
+                        <img src={src} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span
+                          aria-hidden="true"
+                          className="h-6 w-6 rounded-full border border-ink/15"
+                          style={{
+                            background:
+                              c === "transparent"
+                                ? "repeating-conic-gradient(from 0deg, #fff 0deg 90deg, #e7e4da 90deg 180deg)"
+                                : COLOR_HEX[c],
+                          }}
+                        />
+                      )}
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-ink">
+                        {COLOR_LABEL[c]}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <label
+                          htmlFor={inputId}
+                          className="cursor-pointer text-[11px] font-bold uppercase tracking-wider text-brand hover:underline"
+                        >
+                          {colorUploading === c ? "Uploading…" : src ? "Replace" : "Upload"}
+                        </label>
+                        <input
+                          id={inputId}
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          disabled={colorUploading !== null}
+                          onChange={(e) => {
+                            void uploadColorImage(c, e.target.files?.[0]);
+                            e.target.value = "";
+                          }}
+                        />
+                        {src && (
+                          <button
+                            type="button"
+                            onClick={() => clearColorImage(c)}
+                            className="text-[11px] font-semibold text-ink-soft hover:text-brand"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
         <span className={`${label} mt-5 block`}>Rated for</span>
         <ul className="mt-2 flex flex-wrap gap-2">
           {ALL_CERTS.map((c) => {
@@ -672,6 +867,8 @@ function ProductEditor({
           })}
         </ul>
       </fieldset>
+        </>
+      )}
 
       {/* ----------------------------------------------------- imagery */}
       <fieldset className="mt-6 rounded-2xl border border-ink/10 bg-paper-dim/40 p-5">
@@ -1352,11 +1549,30 @@ type EnquiryRow = {
   channel: string;
   status: string;
   created_at: string;
+
+  city: string | null;
+  state: string | null;
+  gstin: string | null;
+  business_type: string | null;
+  quantity: string | null;
+  timeline: string | null;
+  tier_requested: string | null;
+
+  quoted_amount: number | string | null;
+  quoted_currency: string | null;
+  quote_notes: string | null;
+  quoted_at: string | null;
+  granted_tier: string | null;
+  user_id: string | null;
 };
+
+const ENQUIRY_STATUSES = ["new", "quoted", "replied", "won", "closed"] as const;
 
 const ENQUIRY_STATUS_TONE: Record<string, "good" | "brand" | "warn" | "neutral"> = {
   new: "brand",
-  replied: "good",
+  quoted: "warn",
+  replied: "neutral",
+  won: "good",
   closed: "neutral",
 };
 
@@ -1370,7 +1586,166 @@ const CHANNEL_LABEL: Record<string, string> = {
   copy: "Copied",
 };
 
+/**
+ * Pricing an enquiry.
+ *
+ * The office's answer used to live entirely in whatever email they sent back,
+ * which meant the dashboard could tell you an enquiry had been "replied" to
+ * but not what was promised. This records the number, the note it went out
+ * with, and — when the enquiry was a dealer application — the band the account
+ * was actually moved onto.
+ */
+function QuotePanel({
+  row,
+  tiers,
+  onSaved,
+}: {
+  row: EnquiryRow;
+  tiers: TierOption[];
+  onSaved: (patch: Partial<EnquiryRow>) => void;
+}) {
+  const [amount, setAmount] = useState(
+    row.quoted_amount === null || row.quoted_amount === undefined ? "" : String(row.quoted_amount)
+  );
+  const [notes, setNotes] = useState(row.quote_notes ?? "");
+  const [grant, setGrant] = useState(row.granted_tier ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+
+  const save = async () => {
+    if (!supabase) return;
+    setBusy(true);
+    setError(null);
+    setDone(null);
+
+    const parsed = amount.trim() === "" ? null : Number(amount);
+    if (parsed !== null && !Number.isFinite(parsed)) {
+      setBusy(false);
+      return setError("That quoted amount isn't a number.");
+    }
+
+    const patch = {
+      quoted_amount: parsed,
+      quote_notes: notes.trim() || null,
+      granted_tier: grant || null,
+      quoted_at: new Date().toISOString(),
+      status: "quoted",
+    };
+
+    const { error: err } = await supabase.from("enquiries").update(patch).eq("id", row.id);
+    if (err) {
+      setBusy(false);
+      return setError(describeWriteError(err));
+    }
+
+    // Granting a band is the part that changes what the customer sees on the
+    // shop, so it is worth reporting separately from saving the quote — a
+    // quote that saved while the band silently did not is the worst outcome.
+    if (grant && row.user_id) {
+      try {
+        await setCustomerTier(row.user_id, grant, `Granted on enquiry ${row.reference}`);
+        setDone(`Saved, and the account is now on ${tierLabel(tiers, grant)}.`);
+      } catch (err) {
+        setError(
+          `The quote saved, but the band did not: ${describeWriteError(err)}`
+        );
+        setBusy(false);
+        onSaved(patch);
+        return;
+      }
+    } else if (grant && !row.user_id) {
+      setDone(
+        "Quote saved. This enquiry has no account attached, so the band could not be applied — set it on the Customers tab once they sign up."
+      );
+    } else {
+      setDone("Quote saved.");
+    }
+
+    setBusy(false);
+    onSaved(patch);
+  };
+
+  return (
+    <div className="mt-5 rounded-2xl border border-brand/20 bg-brand-tint/60 p-4">
+      <p className="text-[11px] font-bold uppercase tracking-wider text-brand-dark">
+        Quote this enquiry
+      </p>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-medium text-ink">Quoted amount (₹)</span>
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Leave blank if you only sent a rate card"
+            className="rounded-xl border border-ink/12 bg-white px-3 py-2 text-sm text-ink focus:border-brand"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-medium text-ink">Put them on a band</span>
+          <select
+            value={grant}
+            onChange={(e) => setGrant(e.target.value)}
+            className="rounded-xl border border-ink/12 bg-white px-3 py-2 text-sm text-ink focus:border-brand"
+          >
+            <option value="">Leave their band unchanged</option>
+            {tiers.map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.label} — {t.discountPercent}% off list
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <label className="mt-3 flex flex-col gap-1.5 text-sm">
+        <span className="font-medium text-ink">What you quoted</span>
+        <textarea
+          rows={3}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Rates given, MOQ agreed, freight terms, validity…"
+          className="resize-y rounded-xl border border-ink/12 bg-white px-3 py-2 text-sm text-ink focus:border-brand"
+        />
+      </label>
+
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => void save()}
+          disabled={busy}
+          className={buttonClass("primary", "!px-5 !py-2 !text-xs")}
+        >
+          {busy ? "Saving…" : "Save quote"}
+        </button>
+        {row.quoted_at && (
+          <span className="text-[11px] text-ink-soft">
+            Last quoted {new Date(row.quoted_at).toLocaleString("en-IN")}
+          </span>
+        )}
+      </div>
+
+      {error && (
+        <p role="alert" className="mt-3 text-xs font-medium text-brand">
+          {error}
+        </p>
+      )}
+      {done && !error && (
+        <p role="status" className="mt-3 text-xs font-medium text-emerald-800">
+          {done}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function EnquiriesTab() {
+  const { tiers } = useTiers();
   const [enquiries, setEnquiries] = useState<EnquiryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1397,6 +1772,9 @@ function EnquiriesTab() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const patchRow = (id: string, patch: Partial<EnquiryRow>) =>
+    setEnquiries((list) => list.map((e) => (e.id === id ? { ...e, ...patch } : e)));
 
   const setStatus = async (row: EnquiryRow, status: string) => {
     if (!supabase) return;
@@ -1428,13 +1806,21 @@ function EnquiriesTab() {
 
   return (
     <div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Enquiries", value: String(enquiries.length) },
           { label: "Unanswered", value: String(newCount) },
           {
-            label: "With products attached",
-            value: String(enquiries.filter((e) => (e.product_codes?.length ?? 0) > 0).length),
+            label: "Quoted",
+            value: String(enquiries.filter((e) => e.quoted_at !== null).length),
+          },
+          {
+            label: "Asking for a dealer band",
+            value: String(
+              enquiries.filter(
+                (e) => e.tier_requested && e.tier_requested !== "regular"
+              ).length
+            ),
           },
         ].map((s) => (
           <div key={s.label} className="rounded-2xl border border-ink/10 bg-white/60 p-5">
@@ -1543,6 +1929,66 @@ function EnquiriesTab() {
                         <dd className="text-ink">{e.interest}</dd>
                       </div>
                     )}
+                    {(e.city || e.state) && (
+                      <div>
+                        <dt className={label}>Delivering to</dt>
+                        <dd className="text-ink">
+                          {[e.city, e.state].filter(Boolean).join(", ")}
+                        </dd>
+                      </div>
+                    )}
+                    {e.business_type && (
+                      <div>
+                        <dt className={label}>Type of business</dt>
+                        <dd className="text-ink">
+                          {BUSINESS_TYPE_LABEL.get(e.business_type) ?? e.business_type}
+                        </dd>
+                      </div>
+                    )}
+                    {e.gstin && (
+                      <div>
+                        <dt className={label}>GSTIN</dt>
+                        <dd className="font-mono text-[13px] text-ink">{e.gstin}</dd>
+                      </div>
+                    )}
+                    {e.quantity && (
+                      <div>
+                        <dt className={label}>Volume</dt>
+                        <dd className="text-ink">{e.quantity}</dd>
+                      </div>
+                    )}
+                    {e.timeline && (
+                      <div>
+                        <dt className={label}>Needed</dt>
+                        <dd className="text-ink">
+                          {TIMELINE_LABEL.get(e.timeline) ?? e.timeline}
+                        </dd>
+                      </div>
+                    )}
+                    {e.tier_requested && (
+                      <div>
+                        <dt className={label}>How they'd buy</dt>
+                        <dd className="text-ink">
+                          {TIER_REQUEST_LABEL.get(e.tier_requested) ?? e.tier_requested}
+                        </dd>
+                      </div>
+                    )}
+                    {e.granted_tier && (
+                      <div>
+                        <dt className={label}>Band granted</dt>
+                        <dd className="font-semibold text-brand-dark">
+                          {tierLabel(tiers, e.granted_tier)}
+                        </dd>
+                      </div>
+                    )}
+                    {e.quoted_amount !== null && e.quoted_amount !== undefined && (
+                      <div>
+                        <dt className={label}>Quoted</dt>
+                        <dd className="font-semibold text-ink">
+                          {formatMoney(Number(e.quoted_amount), e.quoted_currency ?? "INR")}
+                        </dd>
+                      </div>
+                    )}
                   </dl>
 
                   {e.message ? (
@@ -1573,9 +2019,15 @@ function EnquiriesTab() {
                     </div>
                   )}
 
+                  <QuotePanel
+                    row={e}
+                    tiers={tiers}
+                    onSaved={(patch) => patchRow(e.id, patch)}
+                  />
+
                   <div className="mt-5 flex flex-wrap items-center gap-2">
                     <span className={label}>Mark as</span>
-                    {["new", "replied", "closed"].map((s) => (
+                    {ENQUIRY_STATUSES.map((s) => (
                       <button
                         key={s}
                         type="button"
@@ -1621,6 +2073,8 @@ type ProfileRow = {
   provider: string | null;
   created_at: string;
   last_sign_in_at: string | null;
+  tier: string | null;
+  tier_note: string | null;
 };
 
 type CustomerOrderRow = {
@@ -1650,7 +2104,9 @@ const formatDay = (iso: string | null) =>
  * placed it.
  */
 function CustomersTab() {
+  const { tiers } = useTiers();
   const [people, setPeople] = useState<ProfileRow[]>([]);
+  const [savingTier, setSavingTier] = useState<string | null>(null);
   const [adminIds, setAdminIds] = useState<Set<string>>(new Set());
   const [orders, setOrders] = useState<CustomerOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1666,7 +2122,9 @@ function CustomersTab() {
       const [profiles, admins, orderRows] = await Promise.all([
         client
           .from("profiles")
-          .select("id, email, full_name, avatar_url, provider, created_at, last_sign_in_at")
+          .select(
+            "id, email, full_name, avatar_url, provider, created_at, last_sign_in_at, tier, tier_note"
+          )
           .order("created_at", { ascending: false })
           .limit(500),
         client.from("admins").select("user_id"),
@@ -1689,6 +2147,28 @@ function CustomersTab() {
       cancelled = true;
     };
   }, []);
+
+  /**
+   * Moving somebody onto a band.
+   *
+   * Optimistic, and rolled back on failure: the picker is the whole point of
+   * this screen, and a dropdown that snaps back with no explanation is worse
+   * than one that waits.
+   */
+  const changeTier = async (person: ProfileRow, tier: string) => {
+    const previous = person.tier ?? "regular";
+    setPeople((list) => list.map((p) => (p.id === person.id ? { ...p, tier } : p)));
+    setSavingTier(person.id);
+    try {
+      await setCustomerTier(person.id, tier, person.tier_note ?? null);
+      setError(null);
+    } catch (err) {
+      setPeople((list) => list.map((p) => (p.id === person.id ? { ...p, tier: previous } : p)));
+      setError(describeWriteError(err));
+    } finally {
+      setSavingTier(null);
+    }
+  };
 
   const activity = useMemo(() => {
     const byId = new Map<string, { count: number; value: number }>();
@@ -1728,7 +2208,7 @@ function CustomersTab() {
 
   return (
     <div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Accounts", value: String(people.length) },
           {
@@ -1736,6 +2216,12 @@ function CustomersTab() {
             value: String(people.filter((p) => p.provider === "google").length),
           },
           { label: "Have ordered", value: String(withOrders) },
+          {
+            label: "On a dealer band",
+            value: String(
+              people.filter((p) => (p.tier ?? "regular") !== "regular").length
+            ),
+          },
         ].map((s) => (
           <div key={s.label} className="rounded-2xl border border-ink/10 bg-white/60 p-5">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-soft/70">
@@ -1781,7 +2267,7 @@ function CustomersTab() {
                 </span>
               )}
 
-              <div className="min-w-[12rem] flex-1">
+              <div className="min-w-[12rem] flex-1 break-words">
                 <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
                   {name}
                   {adminIds.has(person.id) && <Badge tone="brand">Admin</Badge>}
@@ -1814,6 +2300,23 @@ function CustomersTab() {
                 </div>
               </dl>
 
+              <label className="flex shrink-0 flex-col gap-1">
+                <span className={label}>Trade band</span>
+                <select
+                  value={person.tier ?? "regular"}
+                  disabled={savingTier === person.id}
+                  onChange={(e) => void changeTier(person, e.target.value)}
+                  className="rounded-xl border border-ink/12 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition focus:border-brand disabled:opacity-50"
+                >
+                  {tiers.map((t) => (
+                    <option key={t.key} value={t.key}>
+                      {t.label}
+                      {t.discountPercent > 0 ? ` · ${t.discountPercent}% off` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               <Badge>{PROVIDER_LABEL[person.provider ?? ""] ?? person.provider ?? "Unknown"}</Badge>
             </li>
           );
@@ -1827,6 +2330,163 @@ function CustomersTab() {
   );
 }
 
+// ------------------------------------------------------------------ tiers
+
+/**
+ * The trade bands themselves.
+ *
+ * Four rows, and they are the most consequential four rows in the dashboard:
+ * every price a signed-in dealer sees is the list price with one of these
+ * numbers taken off it. So the editor states the arithmetic out loud, and
+ * nothing saves until it is pressed.
+ */
+function TiersTab() {
+  const { rows, loading, error, reload } = useTiers();
+  const [draft, setDraft] = useState<Record<string, TierRow>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+
+  const edit = (row: TierRow, patch: Partial<TierRow>) =>
+    setDraft((d) => ({ ...d, [row.key]: { ...row, ...d[row.key], ...patch } }));
+
+  const commit = async (row: TierRow) => {
+    const next = draft[row.key];
+    if (!next) return;
+    setBusy(row.key);
+    setSaveError(null);
+    setSaved(null);
+    try {
+      await saveTier(next);
+      setDraft((d) => {
+        const copy = { ...d };
+        delete copy[row.key];
+        return copy;
+      });
+      setSaved(`${next.label} saved. It applies the next time a buyer loads a price.`);
+      await reload();
+    } catch (err) {
+      setSaveError(describeWriteError(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  if (loading) return <Spinner label="Loading trade bands" />;
+
+  if (error || !rows.length) {
+    return (
+      <Notice tone="warn">
+        <strong className="font-semibold">Trade bands aren&apos;t set up yet.</strong> Run the
+        tiers section of <code className="font-mono text-xs">supabase/schema.sql</code> against
+        your project, then reload. Until then every account is quoted at list price.
+        {error ? <span className="mt-2 block text-xs">{error}</span> : null}
+      </Notice>
+    );
+  }
+
+  return (
+    <div>
+      <Notice>
+        A band&apos;s discount comes off the list price <em>after</em> any discount the product
+        already carries, so a seasonal offer and a dealer band compose rather than one
+        cancelling the other. Assign accounts to a band on the <strong>Customers</strong> tab.
+      </Notice>
+
+      {saveError && (
+        <div className="mt-4">
+          <Notice tone="error">{saveError}</Notice>
+        </div>
+      )}
+      {saved && !saveError && (
+        <p role="status" className="mt-4 text-sm font-medium text-emerald-800">
+          {saved}
+        </p>
+      )}
+
+      <ul className="mt-6 flex flex-col gap-4">
+        {rows.map((row) => {
+          const current = draft[row.key] ?? row;
+          const dirty = Boolean(draft[row.key]);
+          const pct = Number(current.discount_percent) || 0;
+
+          return (
+            <li key={row.key} className="rounded-2xl border border-ink/10 bg-white/60 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-[14rem] flex-1">
+                  <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-ink-soft/70">
+                    {row.key}
+                  </p>
+                  <input
+                    value={current.label}
+                    onChange={(e) => edit(row, { label: e.target.value })}
+                    aria-label={`Name for ${row.key}`}
+                    className="font-display mt-1 w-full border-0 bg-transparent p-0 text-xl font-medium text-ink focus:outline-none"
+                  />
+                </div>
+
+                <label className="flex flex-col gap-1">
+                  <span className={label}>Discount off list</span>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min={0}
+                      max={99}
+                      step="0.5"
+                      value={current.discount_percent}
+                      onChange={(e) => edit(row, { discount_percent: e.target.value })}
+                      className="w-24 rounded-xl border border-ink/12 bg-white px-3 py-2 text-sm font-semibold text-ink focus:border-brand"
+                    />
+                    <span className="text-sm text-ink-soft">%</span>
+                  </div>
+                </label>
+
+                <label className="flex flex-col gap-1">
+                  <span className={label}>Active</span>
+                  <input
+                    type="checkbox"
+                    checked={current.is_active}
+                    onChange={(e) => edit(row, { is_active: e.target.checked })}
+                    className="mt-1.5 h-5 w-5 accent-[#b91c2e]"
+                  />
+                </label>
+              </div>
+
+              <label className="mt-4 block">
+                <span className={label}>What this band is for</span>
+                <input
+                  value={current.description ?? ""}
+                  onChange={(e) => edit(row, { description: e.target.value })}
+                  placeholder="Who belongs on it, and on what terms"
+                  className={`mt-1 ${field}`}
+                />
+              </label>
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-ink-soft">
+                  A ₹1,000 case is quoted at{" "}
+                  <strong className="font-semibold text-ink">
+                    {formatMoney(Math.round(1000 * (1 - pct / 100) * 100) / 100)}
+                  </strong>{" "}
+                  on this band.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void commit(row)}
+                  disabled={!dirty || busy === row.key}
+                  className={buttonClass("primary", "!px-5 !py-2 !text-xs")}
+                >
+                  {busy === row.key ? "Saving…" : dirty ? "Save band" : "Saved"}
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 // -------------------------------------------------------------------- page
 
 const TABS = [
@@ -1834,6 +2494,7 @@ const TABS = [
   { key: "orders", label: "Orders" },
   { key: "enquiries", label: "Enquiries" },
   { key: "customers", label: "Customers" },
+  { key: "tiers", label: "Trade bands" },
 ] as const;
 
 export function AdminPage() {
@@ -1928,6 +2589,7 @@ export function AdminPage() {
         {tab === "orders" && <OrdersTab />}
         {tab === "enquiries" && <EnquiriesTab />}
         {tab === "customers" && <CustomersTab />}
+        {tab === "tiers" && <TiersTab />}
       </Section>
     </>
   );

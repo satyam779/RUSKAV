@@ -3,6 +3,7 @@ import {
   effectivePrice,
   hasPrice,
   round2,
+  tieredPrice,
   type ShopProduct,
 } from "./products";
 
@@ -113,6 +114,8 @@ export type CartTotals = {
   weightPartial: boolean;
   subtotal: number;
   discountTotal: number;
+  /** The trade band these numbers were struck at, for the "Dealer A" line. */
+  tierDiscountPercent: number;
   taxTotal: number;
   total: number;
   currency: string;
@@ -120,19 +123,33 @@ export type CartTotals = {
   payable: boolean;
 };
 
-/** Joins the stored cart against the live product list and totals it up. */
-export function priceCart(cartLines: CartLine[], products: ShopProduct[]): CartTotals {
+/**
+ * Joins the stored cart against the live product list and totals it up.
+ *
+ * `tierDiscountPercent` is the buyer's trade band. It has to be passed in
+ * rather than read here: this runs outside React (the floating bar, the
+ * enquiry form and the cart page all call it), and a total struck at the wrong
+ * band is a number the business then has to honour.
+ */
+export function priceCart(
+  cartLines: CartLine[],
+  products: ShopProduct[],
+  tierDiscountPercent = 0
+): CartTotals {
   const byCode = new Map(products.map((p) => [p.code, p]));
 
   const priced: PricedLine[] = cartLines.flatMap((line) => {
     const product = byCode.get(line.code);
     if (!product) return [];
-    const unitPrice = effectivePrice(product);
+    const unitPrice = tieredPrice(product, tierDiscountPercent);
     const lineTotal = unitPrice === null ? 0 : round2(unitPrice * line.quantity);
+    // Measured against the list price, so the saving covers the product's own
+    // discount and the band together — which is what the buyer actually saved.
+    const listUnit = effectivePrice(product);
     const savings =
       unitPrice === null || product.price === null
         ? 0
-        : round2((product.price - unitPrice) * line.quantity);
+        : round2((Math.max(product.price, listUnit ?? 0) - unitPrice) * line.quantity);
     return [{ product, quantity: line.quantity, unitPrice, lineTotal, savings }];
   });
 
@@ -158,6 +175,7 @@ export function priceCart(cartLines: CartLine[], products: ShopProduct[]): CartT
     weightPartial: weighed.length > 0 && weighed.length < priced.length,
     subtotal,
     discountTotal,
+    tierDiscountPercent,
     taxTotal,
     total: round2(subtotal + taxTotal),
     currency: priced[0]?.product.currency ?? "INR",

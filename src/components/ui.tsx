@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { loginHref, useTradeAccess } from "../lib/trade";
+import { tierApplies, useTier } from "../lib/tier";
 import {
   compareAtPrice,
   effectivePrice,
   formatMoney,
   piecesPerUnit,
-  pricePerPiece,
+  tieredPrice,
+  tieredPricePerPiece,
   type ShopProduct,
 } from "../lib/products";
 
@@ -102,7 +104,7 @@ export function Section({
   return (
     <section
       id={id}
-      className={`scroll-mt-[calc(var(--header-h)+1rem)] py-20 md:py-28 ${className}`}
+      className={`scroll-mt-[calc(var(--header-h)+1rem)] py-14 sm:py-20 md:py-28 ${className}`}
     >
       <div className="mx-auto max-w-6xl px-6">{children}</div>
     </section>
@@ -233,11 +235,16 @@ export function PriceLock({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
 /**
  * A product's price.
  *
- * Four states matter and each has to be unmistakable: locked (a trade visitor
- * who is not signed in — the default on a wholesale site), a plain price, a
- * discounted price (struck-through original beside it, so the saving is
- * visible rather than implied), and no price at all — which is "on request",
+ * Five states and each has to be unmistakable: still resolving, locked (a
+ * trade visitor who is not signed in — the default on a wholesale site), a
+ * plain price, a discounted one with the original struck through so the saving
+ * is visible rather than implied, and no price at all — which is "on request",
  * never "free" or a blank space.
+ *
+ * A buyer on a trade band sees their own number, with the list price struck
+ * beside it and the band named underneath. Quoting a dealer the list price
+ * because their band had not loaded yet is worse than a moment of nothing, so
+ * this waits.
  */
 export function Price({
   product,
@@ -247,8 +254,7 @@ export function Price({
   size?: "sm" | "md" | "lg";
 }) {
   const { unlocked, loading } = useTradeAccess();
-  const now = effectivePrice(product);
-  const was = compareAtPrice(product);
+  const { tier, loading: tierLoading } = useTier();
 
   const scale = {
     sm: { now: "text-base", was: "text-xs", unit: "text-[11px]" },
@@ -256,20 +262,22 @@ export function Price({
     lg: { now: "text-3xl", was: "text-base", unit: "text-sm" },
   }[size];
 
-  if (loading) {
+  if (loading || (unlocked && tierLoading)) {
     return (
       <span
         aria-hidden="true"
-        className={`inline-block h-5 w-28 animate-sheen rounded-full bg-ink/8 ${
-          size === "lg" ? "h-8 w-40" : ""
+        className={`inline-block animate-sheen rounded-full bg-ink/8 ${
+          size === "lg" ? "h-8 w-40" : "h-5 w-28"
         }`}
       />
     );
   }
 
+  const listPrice = effectivePrice(product);
+
   // A line with no price is "on request" whether or not anyone is signed in —
   // there is nothing behind the lock to unlock.
-  if (now === null) {
+  if (listPrice === null) {
     return (
       <span className={`font-display ${scale.now} font-medium text-ink-soft`}>
         Price on request
@@ -279,22 +287,34 @@ export function Price({
 
   if (!unlocked) return <PriceLock size={size} />;
 
+  const banded = tierApplies(tier);
+  const now = tieredPrice(product, tier.discountPercent) ?? listPrice;
+  // Strike the highest honest reference: the MRP if there is one, otherwise
+  // the number a Regular account would be paying.
+  const was = compareAtPrice(product) ?? (banded ? listPrice : null);
+  const saved = was !== null && was > now ? Math.round(((was - now) / was) * 100) : 0;
+
   return (
-    <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-      <span className={`font-display ${scale.now} font-semibold text-ink`}>
-        {formatMoney(now, product.currency)}
+    <span className="flex flex-col gap-0.5">
+      <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span className={`font-display ${scale.now} font-semibold text-ink`}>
+          {formatMoney(now, product.currency)}
+        </span>
+        {saved > 0 && was !== null && (
+          <>
+            <s className={`${scale.was} text-ink-soft/70`}>{formatMoney(was, product.currency)}</s>
+            <span className={`rounded-full bg-brand px-2 py-0.5 ${scale.unit} font-bold text-white`}>
+              {saved}% off
+            </span>
+          </>
+        )}
+        <span className={`${scale.unit} text-ink-soft`}>per {product.priceUnit}</span>
       </span>
-      {was !== null && was > now && (
-        <>
-          <s className={`${scale.was} text-ink-soft/70`}>{formatMoney(was, product.currency)}</s>
-          <span
-            className={`rounded-full bg-brand px-2 py-0.5 ${scale.unit} font-bold text-white`}
-          >
-            {Math.round(((was - now) / was) * 100)}% off
-          </span>
-        </>
+      {banded && (
+        <span className={`${scale.unit} font-semibold text-brand-dark`}>
+          {tier.label} price · {tier.discountPercent}% trade discount applied
+        </span>
       )}
-      <span className={`${scale.unit} text-ink-soft`}>per {product.priceUnit}</span>
     </span>
   );
 }
@@ -315,7 +335,8 @@ export function PerPiece({
   className?: string;
 }) {
   const { unlocked } = useTradeAccess();
-  const piece = pricePerPiece(product);
+  const { tier } = useTier();
+  const piece = tieredPricePerPiece(product, tier.discountPercent);
   const pieces = piecesPerUnit(product);
   if (piece === null || pieces <= 1) return null;
 
@@ -359,7 +380,7 @@ export function SpecSheet({ items, className = "" }: { items: SpecItem[]; classN
       {rows.map((row) => (
         <div
           key={row.label}
-          className="flex items-baseline justify-between gap-6 border-b border-ink/8 px-4 py-3 last:border-b-0 sm:[&:nth-last-child(2):nth-child(odd)]:border-b-0"
+          className="flex items-baseline justify-between gap-3 border-b border-ink/8 px-4 py-3 last:border-b-0 sm:gap-6 sm:[&:nth-last-child(2):nth-child(odd)]:border-b-0"
         >
           <dt className="shrink-0 text-xs uppercase tracking-wider text-ink-soft/80">
             {row.label}

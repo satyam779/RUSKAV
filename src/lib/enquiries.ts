@@ -8,7 +8,52 @@ export type EnquiryInput = {
   interest: string;
   message: string;
   productCodes: string[];
+
+  /** What a quote is actually built from. All optional — an enquiry that only
+   *  says "tell me about your trays" is still a lead worth having. */
+  city: string;
+  state: string;
+  gstin: string;
+  businessType: string;
+  quantity: string;
+  timeline: string;
+  /** Which trade band they are asking to be put on, if any. */
+  tierRequested: string;
 };
+
+export const BUSINESS_TYPES = [
+  { value: "", label: "Select…" },
+  { value: "distributor", label: "Distributor" },
+  { value: "dealer", label: "Dealer / reseller" },
+  { value: "institution", label: "School, college or hospital" },
+  { value: "horeca", label: "Hotel, restaurant or caterer" },
+  { value: "corporate", label: "Corporate or industrial canteen" },
+  { value: "other", label: "Something else" },
+] as const;
+
+export const TIMELINES = [
+  { value: "", label: "Select…" },
+  { value: "immediate", label: "Ready to order now" },
+  { value: "1_month", label: "Within a month" },
+  { value: "3_months", label: "Within three months" },
+  { value: "planning", label: "Planning / budgeting" },
+] as const;
+
+export const TIER_REQUESTS = [
+  { value: "", label: "Not sure — advise me" },
+  { value: "regular", label: "One-off purchase" },
+  { value: "dealer_c", label: "Occasional trade buyer" },
+  { value: "dealer_b", label: "Regular dealer, ordering in volume" },
+  { value: "dealer_a", label: "Appointed distributor" },
+] as const;
+
+/** Labels for the dashboard, so it never prints a raw enum at an admin. */
+const byValue = (list: readonly { value: string; label: string }[]) =>
+  new Map(list.filter((o) => o.value).map((o) => [o.value, o.label]));
+
+export const BUSINESS_TYPE_LABEL = byValue(BUSINESS_TYPES);
+export const TIMELINE_LABEL = byValue(TIMELINES);
+export const TIER_REQUEST_LABEL = byValue(TIER_REQUESTS);
 
 export type SavedEnquiry = { reference: string };
 
@@ -75,6 +120,17 @@ export async function createEnquiry(input: EnquiryInput): Promise<SavedEnquiry> 
       interest: input.interest || null,
       message: input.message.trim() || null,
       product_codes: input.productCodes,
+
+      city: input.city.trim() || null,
+      state: input.state.trim() || null,
+      // Normalised here rather than in the form: a GSTIN typed with spaces is
+      // still a GSTIN, and the office should not have to squint at it.
+      gstin: input.gstin.replace(/\s+/g, "").toUpperCase() || null,
+      business_type: input.businessType || null,
+      quantity: input.quantity.trim() || null,
+      timeline: input.timeline || null,
+      tier_requested: input.tierRequested || null,
+
       channel: "website",
       status: "new",
     });

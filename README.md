@@ -33,10 +33,11 @@ Razorpay adds card payment on top.
 | `/shop` | Wholesale grid with search, range/rating filters, sorting, add-to-order |
 | `/shop/:code` | Single product: gallery, price, specs, colourways, quantity picker |
 | `/cart` | Line items, totals, customer details → enquiry or online payment |
+| `/account` | The customer's own quotes, orders and trade band |
 | `/quality` | Certifications, the four materials compared, what TÜV tests |
-| `/contact` | Enquiry form, contact routes, FAQs |
-| `/login` | Trade login — unlocks pricing for customers, and the door for staff |
-| `/admin` | Products, pricing, discounts, images and orders |
+| `/contact` | Quote request (who you are, what you need), contact routes, FAQs |
+| `/login` | Trade login, sign-up and password reset — unlocks pricing, and the staff door |
+| `/admin` | Products, pricing, discounts, images, orders, enquiries and trade bands |
 
 It is a single-page app with real URLs, so the host must rewrite unknown paths to
 `index.html` or a reload on `/shop` will 404. `public/_redirects` covers Netlify
@@ -99,16 +100,37 @@ Needed for live prices, the admin dashboard and orders.
 
 ### Accounts
 
-Nobody has to sign in. Browsing, building an order, sending an enquiry and
-paying all work as a guest, exactly as before — an account only saves the
-customer from retyping their details and keeps their orders together.
+Nobody has to sign in to *browse*. Building an order, sending an enquiry and
+paying all work as a guest — but prices do not, so in practice a buyer signs in
+(see **Trade pricing is gated** below).
 
-Signing in with Google creates the account; there is no form. `auth.users` is
-not readable with the anon key, by design, so a `public.profiles` table mirrors
-it — a trigger on `auth.users` writes name, email, avatar, provider and last
-sign-in on every sign-up and every sign-in, and `schema.sql` backfills anyone
-who registered before the table existed. Profiles are readable by their owner
-and by admins, and are not writable from the browser at all.
+There are two ways in, both on `/login`:
+
+- **Google**, which creates the account with no form to fill in.
+- **Email and password** — name, email, password — with a reset-by-email link
+  for the inevitable forgotten one. The same form signs staff in; an admin is
+  an ordinary account with a row in `admins`.
+
+Two settings in the Supabase dashboard decide how email sign-up behaves:
+
+- **Authentication → Providers → Email → Confirm email.** On (the default) means
+  a new account is not usable until the link is clicked; the form says so rather
+  than appearing to do nothing. Off means the session arrives immediately.
+- **Authentication → URL Configuration → Redirect URLs** must list your live
+  origin *and* `http://localhost:5173`, or the confirmation and recovery links
+  bounce. Password recovery returns to `/login?recovery=1`, where the page
+  offers a "set a new password" form instead of the usual redirect.
+
+The name typed at sign-up is stored in `user_metadata.full_name`, the same field
+Google fills, so the rest of the site reads one place either way.
+
+`auth.users` is not readable with the anon key, by design, so a
+`public.profiles` table mirrors it — a trigger on `auth.users` writes name,
+email, avatar, provider and last sign-in on every sign-up and every sign-in, and
+`schema.sql` backfills anyone who registered before the table existed. Profiles
+are readable by their owner and by admins. The only column writable from the
+browser is the trade band, and only by an admin — the trigger maintains the
+rest.
 
 Orders and enquiries carry a nullable `user_id`. The row level security check
 is `user_id is null or user_id = auth.uid()`, so a signed-in visitor can attach
@@ -168,11 +190,25 @@ Use `rzp_test_` keys until you have tested the whole flow end to end.
 
 `/admin`, staff only.
 
-**Products & pricing** — create, edit, publish/hide and delete products. Each one
-carries price, MRP (rendered struck-through), discount %, GST %, unit (case or
-piece), minimum order, stock status, size, case pack, material and recycling code,
-surface, free-form specification rows, quality notes, colourways, ratings, and
-images.
+**Products & pricing** — create, edit, publish/hide and delete products.
+
+The editor opens on six fields and the image uploader: **code**, **name**,
+**range**, **size**, **case pack**, **price**. That is a listing that works,
+and it is all that is asked for. Everything else — MRP (rendered
+struck-through), discount %, GST %, unit (case or piece), minimum order, stock
+status, product line, description, material and recycling code, surface,
+free-form specification rows, quality notes, colourways, ratings, trade and
+dispatch — waits behind **Add more detail**.
+
+Nothing was removed; a form that puts thirty fields in front of somebody adding
+a tray is what makes adding a tray feel like filing a return.
+
+*Colourways & ratings* also takes **a photo per colourway**. Upload one against
+a colour and that swatch becomes pressable on the product page, swapping the
+main image to it; colours with no photo stay plain swatches. Stored as
+`products.color_images`, a jsonb map of colour key → url — a handful of urls
+always read with the product and never queried across products, which is a
+column rather than a table.
 
 *Trade & dispatch* holds the four things a distributor asks before ordering:
 **HSN code**, **lead time** (free text — "Ships in 3–5 working days"), **gross
@@ -240,6 +276,111 @@ behind row level security — keep the public policy on a view without the money
 columns, and grant the full table to authenticated roles only. See
 **Security model** above.
 
+## Where the shop's products come from
+
+Once `VITE_SUPABASE_URL` is set, the `products` table is the only source. An
+empty table means an empty shop — "empty" is an answer, and filling a shop with
+thirty-nine lines the business has not priced, cannot fulfil from stock and did
+not choose to list is worse than showing nothing. The shop says it is being
+stocked, and points an admin at the dashboard.
+
+The print catalogue in `src/data/catalogue.ts` still stands in for the two
+cases where it is genuinely the better answer:
+
+- **No backend configured at all** — a fresh checkout of this repo should demo
+  without a Supabase project behind it.
+- **A failed request** — a network blip should not blank a live shop, so the
+  catalogue appears with a banner saying pricing is unreachable.
+
+Note that `schema.sql` never inserts products. If you have rows you did not
+add, they came from `seed-catalogue.sql`, which loads the 2023 print catalogue.
+To clear them and start fresh from the dashboard, run
+`supabase/reset-products.sql` — kept as a separate file, because re-running the
+schema must never be able to delete a catalogue by accident.
+
+The range pages (`/products`, `/products/:id`) are a different thing and still
+read the print catalogue directly: they are the reference document — every code,
+size and tested figure — not the sellable list.
+
+## Trade bands
+
+Wholesale is not one price list, so the site has four: `customer_tiers` holds
+**Regular**, **Dealer C**, **Dealer B** and **Dealer A**, each with a discount
+off list. An admin sets a band per account on **Customers**, and edits the
+bands themselves on **Trade bands**.
+
+The band's discount is applied *after* whatever discount the product already
+carries, so a seasonal offer and a dealer band compose rather than one
+cancelling the other. A banded buyer sees their own number everywhere — grid,
+product page, cart total — with the list price struck beside it and the band
+named underneath.
+
+- `src/lib/tier.ts` — the buyer's own band, held once for the whole app for the
+  same reason the session is: a forty-product grid asks the question forty
+  times. It is populated by the auth store, and cleared on sign-out, so a
+  shared office machine never shows the last dealer's prices to the next
+  person.
+- `src/lib/tiersAdmin.ts` — the whole table, admin only, imported solely by the
+  dashboard chunk.
+- `tieredPrice()` / `tieredPricePerPiece()` in `lib/products.ts`, and the
+  `tierDiscountPercent` argument to `priceCart()`.
+
+**The table is not public.** A Dealer C has no business reading what Dealer A
+pays, so `customer_tiers` is admin-only under RLS and buyers get their own row
+through `public.my_tier()` — a security-definer function that returns the
+caller's band and nobody else's.
+
+Prices wait for the band rather than printing list price first. Quoting a
+dealer the wrong number because their band had not loaded yet is the expensive
+mistake; a moment of shimmer is not.
+
+## Quoting an enquiry
+
+`/contact` is a request for a quote, not a message box — but it asks for six
+things, not sixteen: name, company, email or phone, which range, roughly how
+much, and what they need. That is enough to answer.
+
+Everything that sharpens the answer — delivery city and state, type of
+business, GSTIN, when they need it, and which band they think they belong on —
+sits behind one **Add a few more details** toggle. Offered, not demanded: a
+quote form long enough to feel like an application is one people abandon, and a
+lead with five fields filled in beats a perfect form nobody submitted.
+
+The product codes they had collected in the shop ride along automatically.
+
+On **Enquiries**, each one opens into the full picture plus a quote panel: the
+amount quoted, the note it went out with, and a band to put the account on.
+Saving records `quoted_amount`, `quote_notes`, `quoted_at` and `granted_tier`,
+and moves the status to `quoted`. Statuses run `new → quoted → replied → won`
+(or `closed`).
+
+**The customer reads the quote on `/account`.** The amount, the note the office
+wrote (verbatim — an office that explained its MOQ should have that explanation
+reach the buyer, not a summary), and a line saying their band has moved if it
+has. `enquiries` and `orders` were admin-read-only, which is why the two
+policies under "what a customer can read back" in `schema.sql` exist; without
+them the page has nothing to show.
+
+Those policies key on `user_id` alone, deliberately, not on a matching email
+address. An enquiry sent as a guest carries no account, and letting a fresh
+sign-up claim every row sharing its email would turn the form into a way of
+reading other people's business. A guest enquiry stays between the sender and
+the office, answered by email as it always was — and the confirmation screen
+says so, and offers an account for next time.
+
+There is no outbound email from the app itself. A quote appears on `/account`
+the next time the customer opens it; telling them it is there is still a human
+job (the **Reply by email** button on the enquiry is right there).
+
+Granting a band from here writes to the customer's profile, which is what
+changes the prices they see. Two cases the panel reports separately rather than
+hiding:
+
+- The enquiry has no account attached (sent as a guest), so the band cannot be
+  applied — set it on **Customers** once they sign up.
+- The quote saved but the band write failed. These are two statements, so they
+  get two messages.
+
 ## Cookies
 
 `src/components/CookieBanner.tsx` asks once and never comes back. There is
@@ -262,7 +403,10 @@ grid to the page to the cart never has to re-learn the layout:
   a second angle on hover; then the name, size / case pack / material, the
   colourway dots, the gated price with the per-piece figure under it, one action
   and the minimum order.
-- **Product page** — the same four headline facts under the title, a price block
+- **Product page** — one gallery holding the product shots *and* a frame per
+  photographed colourway, so the thumbnail strip and the colour swatches drive
+  the same selection rather than two that can disagree. Then the same four
+  headline facts under the title, a price block
   carrying per-piece, GST and HSN, and then one **Technical specification**
   sheet holding everything on file: identity, packing, materials, colourways,
   commercials, dispatch, ratings and the tested figures from the print catalogue

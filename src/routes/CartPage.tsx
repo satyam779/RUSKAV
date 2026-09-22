@@ -16,6 +16,7 @@ import { cart, priceCart, useCartLines } from "../lib/cart";
 import { formatMoney, piecesPerUnit, pricePerPiece, useProducts } from "../lib/products";
 import { createOrder, payForOrder, type CustomerDetails } from "../lib/orders";
 import { useTradeAccess } from "../lib/trade";
+import { useTier } from "../lib/tier";
 import { isPaymentConfigured, isSupabaseConfigured } from "../lib/supabase";
 
 type Errors = Partial<Record<"name" | "contact", string>>;
@@ -53,13 +54,17 @@ export function CartPage() {
   const { products } = useProducts();
   const { session } = useAuth();
   const { unlocked } = useTradeAccess();
+  const { tier } = useTier();
   const [details, setDetails] = useState<CustomerDetails>(emptyDetails);
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<string>("");
   const [busy, setBusy] = useState<null | "enquiry" | "payment">(null);
   const [done, setDone] = useState<{ reference: string; paid: boolean } | null>(null);
 
-  const totals = useMemo(() => priceCart(lines, products), [lines, products]);
+  const totals = useMemo(
+    () => priceCart(lines, products, tier.discountPercent),
+    [lines, products, tier.discountPercent]
+  );
 
   // A signed-in customer should not retype what their account already knows.
   // Only empty fields are filled, so anything they have edited survives.
@@ -212,9 +217,12 @@ export function CartPage() {
               {totals.lines.map((l) => (
                 <li
                   key={l.product.code}
-                  className="flex gap-4 rounded-3xl border border-ink/10 bg-white/70 p-4"
+                  className="flex gap-3 rounded-2xl border border-ink/10 bg-white/70 p-3 sm:gap-4 sm:rounded-3xl sm:p-4"
                 >
-                  <Link to={`/shop/${encodeURIComponent(l.product.code)}`} className="w-24 shrink-0">
+                  <Link
+                    to={`/shop/${encodeURIComponent(l.product.code)}`}
+                    className="w-20 shrink-0 sm:w-24"
+                  >
                     <ProductImage src={l.product.images[0]} alt={l.product.name} />
                   </Link>
 
@@ -360,9 +368,24 @@ export function CartPage() {
                     </div>
                     {totals.discountTotal > 0 && (
                       <div className="flex justify-between">
-                        <dt className="text-ink-soft">Discount</dt>
+                        <dt className="text-ink-soft">
+                          Discount
+                          {tier.discountPercent > 0 && (
+                            <span className="ml-1 text-xs text-ink-soft/70">
+                              (incl. {tier.label})
+                            </span>
+                          )}
+                        </dt>
                         <dd className="font-semibold text-brand">
                           − {formatMoney(totals.discountTotal, totals.currency)}
+                        </dd>
+                      </div>
+                    )}
+                    {tier.discountPercent > 0 && (
+                      <div className="flex justify-between">
+                        <dt className="text-ink-soft">Your trade band</dt>
+                        <dd className="font-semibold text-brand-dark">
+                          {tier.label} · {tier.discountPercent}% off list
                         </dd>
                       </div>
                     )}

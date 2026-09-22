@@ -5,9 +5,9 @@ import { loginHref, useTradeAccess } from "../lib/trade";
  * The explanation behind every padlock on the site.
  *
  * A locked price with no reason next to it reads as a site that is broken or
- * cagey. This says the quiet part out loud — the list is wholesale, the
- * account is free, and it takes one tap with Google — and gives the buyer the
- * button rather than sending them hunting for it.
+ * cagey. This says the quiet part out loud — the list is wholesale and the
+ * account is free — and gives the buyer the button rather than sending them
+ * hunting for it.
  *
  * It renders nothing once someone is in: a banner that congratulates a
  * signed-in buyer on being signed in is just furniture.
@@ -64,8 +64,8 @@ export function TradeGate({ compact = false }: { compact?: boolean }) {
             </h2>
             <p className="mt-2 max-w-lg text-balance text-sm leading-relaxed text-paper/65">
               Case rates, per-piece costs and current offers are for account holders.
-              Creating an account is free, takes one tap with Google, and keeps your
-              orders and enquiries in one place.
+              Creating one is free — Google, or an email and a password — and it keeps
+              your orders and enquiries in one place.
             </p>
           </div>
         </div>
@@ -75,7 +75,7 @@ export function TradeGate({ compact = false }: { compact?: boolean }) {
             to={loginHref(pathname)}
             className="flex-1 rounded-full bg-brand px-6 py-3 text-center text-sm font-bold text-white shadow-sm shadow-brand/30 transition hover:bg-brand-dark md:flex-none"
           >
-            Unlock prices
+            Sign in or register
           </Link>
           <Link
             to="/contact"

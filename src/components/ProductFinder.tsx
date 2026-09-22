@@ -59,7 +59,10 @@ export function ProductFinder() {
   };
 
   return (
-    <section id="catalogue" className="scroll-mt-24 border-t border-ink/8 bg-paper py-24 md:py-32">
+    <section
+      id="catalogue"
+      className="scroll-mt-[calc(var(--header-h)+1rem)] border-t border-ink/8 bg-paper py-14 sm:py-20 md:py-32"
+    >
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>

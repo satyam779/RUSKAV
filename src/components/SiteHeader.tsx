@@ -304,7 +304,7 @@ export function SiteHeader() {
 
             {session && !isAdmin ? (
               <Link
-                to="/login"
+                to="/account"
                 title={displayName(session.user)}
                 className="hidden h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-white/50 bg-white/10 transition hover:border-white sm:grid"
               >
@@ -383,19 +383,22 @@ export function SiteHeader() {
             transition={{ duration: 0.28, ease: "easeInOut" }}
             className="overflow-hidden border-t border-white/15 bg-brand-dark lg:hidden"
           >
-            <nav aria-label="Mobile" className="flex max-h-[70vh] flex-col gap-1 overflow-y-auto px-5 pb-6 pt-3">
+            <nav
+              aria-label="Mobile"
+              className="max-h-[calc(100svh-var(--header-h)-1rem)] space-y-1 overflow-y-auto overscroll-contain px-5 pb-6 pt-3"
+            >
               <Link
                 to="/shop"
-                className="mb-1 rounded-xl bg-white/10 px-3 py-3 text-base font-bold text-white"
+                className="mb-1 block rounded-xl bg-white/10 px-3 py-3 text-base font-bold text-white"
               >
                 Shop with prices
               </Link>
-              <Link to="/about" className="rounded-lg px-2 py-3 text-base font-medium text-white/85">
+              <Link to="/about" className="block rounded-lg px-2 py-3 text-base font-medium text-white/85">
                 About
               </Link>
               <button
                 type="button"
-                className="flex items-center justify-between rounded-lg px-2 py-3 text-base font-medium text-white/85"
+                className="flex w-full items-center justify-between rounded-lg px-2 py-3 text-base font-medium text-white/85"
                 aria-expanded={productsOpen}
                 aria-controls="mobile-products"
                 onClick={() => setProductsOpen((v) => !v)}
@@ -425,11 +428,11 @@ export function SiteHeader() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="flex flex-col overflow-hidden pl-4"
+                    className="overflow-hidden pl-3"
                   >
                     <Link
                       to="/products"
-                      className="rounded-lg px-2 py-2.5 text-sm font-semibold text-white"
+                      className="block rounded-lg px-2 py-2.5 text-sm font-semibold text-white"
                     >
                       All products
                     </Link>
@@ -456,14 +459,14 @@ export function SiteHeader() {
                   </motion.div>
                 )}
               </AnimatePresence>
-              <Link to="/quality" className="rounded-lg px-2 py-3 text-base font-medium text-white/85">
+              <Link to="/quality" className="block rounded-lg px-2 py-3 text-base font-medium text-white/85">
                 Quality
               </Link>
-              <Link to="/contact" className="rounded-lg px-2 py-3 text-base font-medium text-white/85">
+              <Link to="/contact" className="block rounded-lg px-2 py-3 text-base font-medium text-white/85">
                 Contact
               </Link>
               <Link
-                to={isAdmin ? "/admin" : loginHref(location.pathname)}
+                to={isAdmin ? "/admin" : session ? "/account" : loginHref(location.pathname)}
                 className="mt-3 flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-center text-sm font-bold text-brand-dark"
               >
                 {!isAdmin && !session && (
@@ -476,7 +479,7 @@ export function SiteHeader() {
               </Link>
               <Link
                 to="/contact"
-                className="mt-2 rounded-full bg-ink px-5 py-3 text-center text-sm font-semibold text-paper"
+                className="mt-2 block rounded-full bg-ink px-5 py-3 text-center text-sm font-semibold text-paper"
               >
                 Enquire Now
               </Link>

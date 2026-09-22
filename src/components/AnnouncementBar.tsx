@@ -48,8 +48,8 @@ export function AnnouncementBar() {
 
   return (
     <div className="relative bg-ink text-paper/85">
-      <div className="mx-auto flex h-9 max-w-7xl items-center justify-center gap-6 px-10 md:h-10 md:px-8">
-        <p className="flex items-center gap-6 truncate text-[11px] font-semibold uppercase tracking-[0.16em] md:tracking-[0.2em]">
+      <div className="mx-auto flex h-9 max-w-7xl items-center justify-center gap-6 px-9 md:h-10 md:px-8">
+        <p className="flex items-center gap-6 truncate text-[10px] font-semibold uppercase tracking-[0.1em] sm:text-[11px] sm:tracking-[0.16em] md:tracking-[0.2em]">
           {unlocked ? (
             <span className="flex items-center gap-2">
               <span
@@ -60,7 +60,8 @@ export function AnnouncementBar() {
             </span>
           ) : (
             <Link to="/login" className="font-bold text-brand-light underline-offset-4 hover:underline">
-              Sign in to unlock wholesale pricing
+              <span className="sm:hidden">Sign in for trade prices</span>
+              <span className="hidden sm:inline">Sign in to unlock wholesale pricing</span>
             </Link>
           )}
           <span aria-hidden="true" className="hidden text-brand-light/60 sm:inline">

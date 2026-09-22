@@ -162,7 +162,7 @@ function Sectors() {
 /** The sustainable line, given its own band rather than a tile in a grid. */
 function BioBand() {
   return (
-    <section className="bg-bio-paper py-20 md:py-28">
+    <section className="bg-bio-paper py-14 sm:py-20 md:py-28">
       <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 md:grid-cols-2 md:gap-16">
         <div className="relative">
           <div className="media-panel-bio aspect-[5/4] overflow-hidden rounded-[2rem]">

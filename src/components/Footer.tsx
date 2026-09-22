@@ -44,7 +44,7 @@ export function Footer() {
               to={signedIn ? "/shop" : loginHref("/shop")}
               className="rounded-full bg-brand px-6 py-3 text-sm font-bold text-white shadow-sm shadow-brand/30 transition hover:bg-brand-dark"
             >
-              {signedIn ? "Go to the shop" : "Unlock pricing"}
+              {signedIn ? "Go to the shop" : "Create a free account"}
             </Link>
             <a
               href={`https://wa.me/${companyInfo.whatsapp}`}

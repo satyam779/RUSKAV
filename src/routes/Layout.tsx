@@ -16,6 +16,7 @@ const TITLES: Record<string, string> = {
   "/products": "Product range | Ruskav Food Service Products",
   "/shop": "Wholesale shop | Trade prices, case packs and discounts | Ruskav",
   "/cart": "Your order | Ruskav",
+  "/account": "Your account | Quotes and orders | Ruskav",
   "/quality": "Quality & certification | Ruskav",
   "/contact": "Contact & distributor enquiries | Ruskav",
   "/login": "Trade login | Unlock wholesale pricing | Ruskav",

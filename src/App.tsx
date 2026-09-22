@@ -9,6 +9,7 @@ import { CategoryPage } from "./routes/CategoryPage";
 import { ShopPage } from "./routes/ShopPage";
 import { ProductPage } from "./routes/ProductPage";
 import { CartPage } from "./routes/CartPage";
+import { AccountPage } from "./routes/AccountPage";
 import { QualityPage } from "./routes/QualityPage";
 import { ContactPage } from "./routes/ContactPage";
 import { NotFoundPage } from "./routes/NotFoundPage";
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
       { path: "/shop", element: <ShopPage /> },
       { path: "/shop/:code", element: <ProductPage /> },
       { path: "/cart", element: <CartPage /> },
+      { path: "/account", element: <AccountPage /> },
       { path: "/quality", element: <QualityPage /> },
       { path: "/contact", element: <ContactPage /> },
       { path: "/login", element: staffRoute(<LoginPage />) },

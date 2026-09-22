@@ -48,6 +48,12 @@ export type ShopProduct = {
 
   stockStatus: string;
   images: string[];
+  /**
+   * One photograph per colourway, keyed by colour. Pressing a swatch on the
+   * product page shows that colour; a colour with no entry simply stays a
+   * swatch, which is honest about what we have shot.
+   */
+  colorImages: Partial<Record<ColorKey, string>>;
   isPublished: boolean;
   isFeatured: boolean;
   sortOrder: number;
@@ -83,6 +89,7 @@ type ProductRow = {
   carton_size: string | null;
   stock_status: string | null;
   images: string[] | null;
+  color_images: Record<string, string> | null;
   is_published: boolean | null;
   is_featured: boolean | null;
   sort_order: number | null;
@@ -129,6 +136,12 @@ export function fromRow(row: ProductRow): ShopProduct {
     cartonSize: row.carton_size ?? null,
     stockStatus: row.stock_status ?? "in_stock",
     images: row.images ?? [],
+    // A column that predates this feature comes back null, and a hand-edited
+    // row can come back as anything — neither should crash a product page.
+    colorImages:
+      row.color_images && typeof row.color_images === "object"
+        ? (row.color_images as Partial<Record<ColorKey, string>>)
+        : {},
     isPublished: row.is_published ?? true,
     isFeatured: row.is_featured ?? false,
     sortOrder: row.sort_order ?? 0,
@@ -165,6 +178,7 @@ export function toRow(p: ShopProduct) {
     carton_size: p.cartonSize,
     stock_status: p.stockStatus,
     images: p.images,
+    color_images: p.colorImages,
     is_published: p.isPublished,
     is_featured: p.isFeatured,
     sort_order: p.sortOrder,
@@ -208,6 +222,7 @@ export const fallbackProducts: ShopProduct[] = allProducts.map((p, i) => ({
   cartonSize: null,
   stockStatus: "in_stock",
   images: imagePairFor(p.categoryId),
+  colorImages: {},
   isPublished: true,
   isFeatured: i < 6,
   sortOrder: i,
@@ -222,8 +237,23 @@ export type ProductsState = {
   reload: () => void;
 };
 
+/**
+ * The sellable range.
+ *
+ * Once a database is connected, it is the only source: an empty `products`
+ * table means an empty shop, because "empty" is an answer and the print
+ * catalogue is not it. Filling a shop with thirty-nine lines the business has
+ * not priced, cannot fulfil from stock and did not choose to list is worse
+ * than showing nothing.
+ *
+ * The print catalogue still stands in for two cases where it is genuinely the
+ * better answer: no backend configured at all (a checkout of this repo should
+ * demo), and a failed request (a network blip should not blank a live shop).
+ */
 export function useProducts({ includeUnpublished = false } = {}): ProductsState {
-  const [products, setProducts] = useState<ShopProduct[]>(fallbackProducts);
+  const [products, setProducts] = useState<ShopProduct[]>(
+    isSupabaseConfigured ? [] : fallbackProducts
+  );
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [usingFallback, setUsingFallback] = useState(!isSupabaseConfigured);
   const [error, setError] = useState<string | null>(null);
@@ -241,16 +271,20 @@ export function useProducts({ includeUnpublished = false } = {}): ProductsState 
       if (cancelled) return;
       setLoading(false);
       if (err) {
-        // A missing table or a network failure must not blank the shop —
+        // A missing table or a network failure must not blank a live shop —
         // fall back to the print catalogue and say so.
         setError(err.message);
         setUsingFallback(true);
+        setProducts(fallbackProducts);
         return;
       }
       const rows = (data ?? []) as ProductRow[];
       if (rows.length === 0) {
-        setUsingFallback(true);
-        setProducts(fallbackProducts);
+        // Connected and empty. The admin has not added anything yet, and the
+        // shop says exactly that rather than inventing a catalogue.
+        setUsingFallback(false);
+        setError(null);
+        setProducts([]);
         return;
       }
       setUsingFallback(false);
@@ -293,6 +327,33 @@ export function formatMoney(amount: number, currency = "INR") {
 }
 
 export const hasPrice = (p: ShopProduct) => p.price !== null && p.price > 0;
+
+/**
+ * The price this buyer actually pays: the product's own discount first, then
+ * their trade band on top.
+ *
+ * The two compose rather than compete. A seasonal 10% off and a Dealer A band
+ * are two separate promises the business made, and picking the larger of them
+ * would quietly break one.
+ */
+export const tieredPrice = (
+  p: Pick<ShopProduct, "price" | "discountPercent">,
+  tierDiscountPercent: number
+) => {
+  const base = effectivePrice(p);
+  if (base === null) return null;
+  const pct = Math.min(99, Math.max(0, tierDiscountPercent));
+  return round2(base * (1 - pct / 100));
+};
+
+/** Per piece, after the product discount and the band. */
+export const tieredPricePerPiece = (
+  p: Pick<ShopProduct, "price" | "discountPercent" | "priceUnit" | "casePack">,
+  tierDiscountPercent: number
+) => {
+  const unit = tieredPrice(p, tierDiscountPercent);
+  return unit === null ? null : round2(unit / piecesPerUnit(p));
+};
 
 /**
  * How many pieces are in one sold unit.
