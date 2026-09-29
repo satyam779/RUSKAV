@@ -150,7 +150,7 @@ export function MakeInIndiaMark({
   const img = (
     <img
       src="/make-in-india.webp"
-      alt="Make in India — Ruskav products are proudly made in India."
+      alt="Make in India: Ruskav products are proudly made in India."
       width={246}
       height={168}
       loading="lazy"

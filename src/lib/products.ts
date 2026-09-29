@@ -228,6 +228,19 @@ export const fallbackProducts: ShopProduct[] = allProducts.map((p, i) => ({
   sortOrder: i,
 }));
 
+const catalogueByCode = new Map(fallbackProducts.map((p) => [p.code, p]));
+
+/**
+ * The print-catalogue entry for a code, as a price-on-request product.
+ *
+ * The range pages and the product finder offer every catalogue code — with a
+ * link and an "Add" button — whether or not the live shop lists it yet. So a
+ * lookup by code falls back to this: without it, those links 404 and the
+ * cases a buyer added never reach their order.
+ */
+export const catalogueProduct = (code: string | undefined) =>
+  code ? catalogueByCode.get(code) : undefined;
+
 export type ProductsState = {
   products: ShopProduct[];
   loading: boolean;

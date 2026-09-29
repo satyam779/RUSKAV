@@ -80,7 +80,7 @@ function readable(message: string) {
     return "That email and password don't match an account. Check them, or create an account below.";
   }
   if (m.includes("email not confirmed")) {
-    return "Your account isn't confirmed yet — open the link in the email we sent you.";
+    return "Your account isn't confirmed yet. Open the link in the email we sent you.";
   }
   if (m.includes("password should be")) {
     return `Pick a password of at least ${MIN_PASSWORD} characters.`;
@@ -183,7 +183,7 @@ export function LoginPage() {
           );
         } else if (needsConfirmation) {
           setNotice(
-            `Account created. We've emailed ${trimmedEmail} a confirmation link — open it and you're in.`
+            `Account created. We've emailed ${trimmedEmail} a confirmation link. Open it and you're in.`
           );
         }
         // With email confirmation switched off the session arrives here and
@@ -481,7 +481,7 @@ export function LoginPage() {
                   <button
                     type="button"
                     onClick={() => switchTo("forgot")}
-                    className="font-semibold text-ink-soft transition hover:text-brand"
+                    className="-my-2 inline-block py-2 font-semibold text-ink-soft transition hover:text-brand"
                   >
                     Forgotten your password?
                   </button>
@@ -490,7 +490,7 @@ export function LoginPage() {
                   <button
                     type="button"
                     onClick={() => switchTo("signin")}
-                    className="font-semibold text-ink-soft transition hover:text-brand"
+                    className="-my-2 inline-block py-2 font-semibold text-ink-soft transition hover:text-brand"
                   >
                     ← Back to sign in
                   </button>
@@ -535,7 +535,7 @@ export function LoginPage() {
 
           {session && !isAdmin && !loading && (
             <p className="mt-6 text-center text-xs text-ink-soft/80">
-              Dashboard access is granted separately — a staff account has to be listed in the{" "}
+              Dashboard access is granted separately. A staff account has to be listed in the{" "}
               <code className="font-mono">admins</code> table.
             </p>
           )}

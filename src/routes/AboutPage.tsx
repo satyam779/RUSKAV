@@ -19,7 +19,7 @@ const stats = [
 const process = [
   {
     title: "Virgin raw material",
-    body: "Every batch starts with virgin, food-contact-safe pellets — FDA-approved or certified to IS 10910. No regrind, no reclaimed filler in anything that touches food.",
+    body: "Every batch starts with virgin, food-contact-safe pellets, FDA-approved or certified to IS 10910. No regrind, no reclaimed filler in anything that touches food.",
   },
   {
     title: "In-house injection moulding",
@@ -60,7 +60,7 @@ export function AboutPage() {
             Quality control isn&apos;t a department. It&apos;s the whole job.
           </>
         }
-        intro="RUSKAV Food Service Products is one of India's largest manufacturers of international-quality food service products — fast food trays, compartment trays, cafeteria trays, PC tumblers and PC dinnerware among them."
+        intro="RUSKAV Food Service Products is one of India's largest manufacturers of international-quality food service products, with fast food trays, compartment trays, cafeteria trays, PC tumblers and PC dinnerware among them."
       >
         <div className="flex flex-wrap items-center gap-3">
           <MadeInIndiaBadge />
@@ -105,7 +105,7 @@ export function AboutPage() {
           </div>
         </div>
 
-        <dl className="mt-16 grid grid-cols-2 gap-8 border-t border-ink/10 pt-10 md:grid-cols-4">
+        <dl className="mt-12 grid grid-cols-2 gap-8 border-t md:mt-16 border-ink/10 pt-10 md:grid-cols-4">
           {stats.map((s) => (
             <div key={s.label}>
               <dt className="sr-only">{s.label}</dt>
@@ -120,7 +120,7 @@ export function AboutPage() {
         <SectionHeading
           kicker="How it's made"
           title="From raw pellet to packed case."
-          intro="Five stages, all under one roof — which is the reason a fault gets caught here rather than in your kitchen."
+          intro="Five stages, all under one roof, which is why a fault gets caught here rather than in your kitchen."
         />
         <ol className="grid gap-px overflow-hidden rounded-3xl bg-ink/10 md:grid-cols-2 lg:grid-cols-3">
           {process.map((step, i) => (

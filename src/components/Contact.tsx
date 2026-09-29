@@ -1,3 +1,4 @@
+import { LabelIcon } from "./icons/LabelIcon";
 import { useEffect, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import { categories, bioCategory, companyInfo } from "../data/catalogue";
@@ -169,7 +170,7 @@ export function Contact() {
       setStatus("");
     } catch (err) {
       console.error("Could not record the enquiry:", err);
-      setStatus("Sorry — that didn’t send. Please try again in a moment.");
+      setStatus("Sorry, that didn’t send. Please try again in a moment.");
     } finally {
       setSending(false);
     }
@@ -178,7 +179,7 @@ export function Contact() {
   return (
     <section
       id="contact"
-      className="scroll-mt-[calc(var(--header-h)+1rem)] bg-paper-dim py-14 sm:py-20 md:py-32"
+      className="scroll-mt-[calc(var(--header-h)+1rem)] bg-paper-dim py-10 sm:py-14 md:py-24"
     >
       <div className="mx-auto max-w-6xl px-6">
         <div className="grid gap-14 md:grid-cols-[0.9fr_1.1fr] md:gap-16">
@@ -188,12 +189,12 @@ export function Contact() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
-            <p className="eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] text-brand">Get in touch</p>
+            <p className="eyebrow-rule text-brand"><LabelIcon label="Get in touch" />Get in touch</p>
             <h2 className="font-display mt-4 text-balance text-4xl font-medium leading-[1.08] text-ink md:text-5xl">
               Ask us for a price.
             </h2>
             <p className="mt-5 max-w-sm text-balance leading-relaxed text-ink-soft">
-              Tell us what you&apos;re serving and how much of it — we&apos;ll get back with
+              Tell us what you&apos;re serving and how much of it, and we&apos;ll get back with
               specifications, MOQs and pricing.
             </p>
 
@@ -258,15 +259,16 @@ export function Contact() {
               transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
               className="rounded-[2rem] bg-white p-7 shadow-xl shadow-ink/5 md:p-9"
             >
-              <p className="eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
+              <p className="eyebrow-rule text-brand">
+                <LabelIcon label="Quote request received" />
                 Quote request received
               </p>
               <h3 className="font-display mt-4 text-3xl font-medium text-ink">
-                Thank you — that&apos;s with us.
+                Thank you, that&apos;s with us.
               </h3>
               <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-soft">
                 It is in front of our team now. We&apos;ll come back with specifications, MOQs
-                and a price against this reference — and if you asked to be set up as a
+                and a price against this reference, and if you asked to be set up as a
                 dealer, with the band we can put you on.
               </p>
               {session ? (
@@ -406,7 +408,7 @@ export function Contact() {
                       {showDetail ? "Extra detail" : "Add a few more details"}
                     </span>
                     <span className="block text-xs text-ink-soft">
-                      Optional — but it gets you a firm price instead of a range.
+                      Optional, but it gets you a firm price instead of a range.
                     </span>
                   </span>
                   <span
@@ -526,7 +528,7 @@ export function Contact() {
                     <button
                       type="button"
                       onClick={() => cart.clear()}
-                      className="text-[11px] font-semibold uppercase tracking-wider text-ink-soft transition hover:text-brand"
+                      className="-my-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-ink-soft transition hover:text-brand"
                     >
                       Clear
                     </button>
@@ -538,7 +540,7 @@ export function Contact() {
                           type="button"
                           onClick={() => cart.remove(p.code)}
                           title={`${p.name} · ${p.size}`}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-ink/10 bg-white px-2.5 py-1 font-mono text-[11px] font-semibold text-brand-dark transition hover:border-brand"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-ink/10 bg-white px-3 py-2 font-mono text-[11px] font-semibold text-brand-dark transition hover:border-brand"
                         >
                           {p.code}
                           <span className="sr-only">Remove from enquiry</span>
@@ -569,7 +571,7 @@ export function Contact() {
 
               <p role="status" aria-live="polite" className="mt-3 min-h-[1.25rem] text-center text-xs text-ink-soft">
                 {status ||
-                  "Goes straight to our team — we usually come back with pricing within one working day."}
+                  "Goes straight to our team. We usually come back with pricing within one working day."}
               </p>
 
               {!isSupabaseConfigured && (

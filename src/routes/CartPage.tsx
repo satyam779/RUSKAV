@@ -109,7 +109,7 @@ export function CartPage() {
       cart.clear();
     } catch (err) {
       console.error("Could not record the order:", err);
-      setStatus("Sorry — that didn’t send. Please try again in a moment.");
+      setStatus("Sorry, that didn’t send. Please try again in a moment.");
     } finally {
       setBusy(null);
     }
@@ -126,7 +126,7 @@ export function CartPage() {
         setDone({ reference: order.reference, paid: true });
         cart.clear();
       } else {
-        setStatus(`Payment cancelled. Your order ${order.reference} is saved — you can pay or send it as an enquiry.`);
+        setStatus(`Payment cancelled. Your order ${order.reference} is saved. You can pay or send it as an enquiry.`);
       }
     } catch (err) {
       setStatus(err instanceof Error ? err.message : "Payment could not be started.");
@@ -140,7 +140,7 @@ export function CartPage() {
       <>
         <PageHeader
           kicker={done.paid ? "Payment received" : "Order sent"}
-          title={done.paid ? "Thank you — that's paid." : "Thank you — that's with us."}
+          title={done.paid ? "Thank you, that's paid." : "Thank you, that's with us."}
           intro={
             done.paid
               ? "We've got your payment and your order. A confirmation is on its way, and we'll be in touch about dispatch."
@@ -566,7 +566,7 @@ export function CartPage() {
                 {status ||
                   (isPaymentConfigured && totals.payable && unlocked
                     ? "Card, UPI and netbanking via Razorpay. Payments are verified on our server."
-                    : "Sent straight to our team — we usually reply within one working day.")}
+                    : "Sent straight to our team. We usually reply within one working day.")}
               </p>
 
               {!isSupabaseConfigured && (

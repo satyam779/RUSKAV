@@ -1,3 +1,4 @@
+import { LabelIcon } from "./icons/LabelIcon";
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { categories, CERT_LABEL, type CertKind } from "../data/catalogue";
@@ -27,7 +28,7 @@ function FilterChip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+      className={`rounded-full border px-3.5 py-2.5 text-xs font-medium transition sm:py-1.5 ${
         active
           ? "border-brand bg-brand text-white"
           : "border-ink/15 bg-white/60 text-ink-soft hover:border-ink/30 hover:text-ink"
@@ -61,18 +62,18 @@ export function ProductFinder() {
   return (
     <section
       id="catalogue"
-      className="scroll-mt-[calc(var(--header-h)+1rem)] border-t border-ink/8 bg-paper py-14 sm:py-20 md:py-32"
+      className="scroll-mt-[calc(var(--header-h)+1rem)] border-t border-ink/8 bg-paper py-10 sm:py-14 md:py-24"
     >
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] text-brand">Product finder</p>
+            <p className="eyebrow-rule text-brand"><LabelIcon label="Product finder" />Product finder</p>
             <h2 className="font-display mt-4 max-w-lg text-balance text-4xl font-medium leading-[1.08] text-ink md:text-5xl">
               Every code in the range, searchable.
             </h2>
           </div>
           <p className="max-w-sm text-balance text-ink-soft">
-            Search by product code, size or description — then add what you need to
+            Search by product code, size or description, then add what you need to
             your order and send it straight over.
           </p>
         </div>
@@ -172,7 +173,7 @@ export function ProductFinder() {
             <p className="font-display text-xl text-ink">Nothing matches that.</p>
             <p className="mx-auto mt-2 max-w-sm text-balance text-sm text-ink-soft">
               Try a shorter search, or clear the filters. If you need a size or format
-              that isn&apos;t listed, ask us — a lot of the range is made to order.
+              that isn&apos;t listed, ask us. A lot of the range is made to order.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <button
@@ -234,7 +235,7 @@ export function ProductFinder() {
                       >
                         <Link
                           to={`/shop/${encodeURIComponent(p.code)}`}
-                          className="underline-offset-2 hover:underline"
+                          className="-mx-1.5 -my-2 inline-block px-1.5 py-2 underline-offset-2 hover:underline"
                         >
                           {p.code}
                         </Link>
@@ -248,7 +249,7 @@ export function ProductFinder() {
                         </span>
                         <a
                           href={`#${p.categoryId}`}
-                          className="mt-0.5 block text-xs text-ink-soft underline-offset-2 hover:text-brand hover:underline"
+                          className="-my-1 block py-1.5 text-xs text-ink-soft underline-offset-2 hover:text-brand hover:underline"
                         >
                           {p.groupName === p.description ? p.categoryShortName : p.groupName}
                         </a>
@@ -269,7 +270,7 @@ export function ProductFinder() {
                         <button
                           type="button"
                           onClick={() => cart.add(p.code)}
-                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                          className={`whitespace-nowrap rounded-full border px-3 py-2.5 text-xs font-semibold transition sm:py-1.5 ${
                             inCart
                               ? "border-brand bg-brand text-white"
                               : "border-ink/15 text-ink-soft hover:border-brand hover:text-brand"

@@ -64,7 +64,7 @@ export function productSummary(product: ShopProduct, categoryName?: string) {
     categoryName?.toLowerCase(),
   ].filter(Boolean);
 
-  return `${product.code} — ${product.name}. ${parts.join(", ")}. Manufactured in India by RUSKAV Food Service Products.`;
+  return `${product.code} ${product.name}. ${parts.join(", ")}. Manufactured in India by RUSKAV Food Service Products.`;
 }
 
 export function useProductSeo(product: ShopProduct | undefined, categoryName?: string) {

@@ -91,7 +91,7 @@ export function ProductCard({
   return (
     <article className="group relative flex h-full flex-col">
       <div className="relative">
-        <Link to={href} className="block" aria-label={`${product.code} — ${product.name}`}>
+        <Link to={href} className="block" aria-label={`${product.code}, ${product.name}`}>
           <ProductImage
             src={product.images[0]}
             hoverSrc={product.images[1]}

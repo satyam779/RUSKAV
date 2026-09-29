@@ -40,7 +40,7 @@ export const TIMELINES = [
 ] as const;
 
 export const TIER_REQUESTS = [
-  { value: "", label: "Not sure — advise me" },
+  { value: "", label: "Not sure, advise me" },
   { value: "regular", label: "One-off purchase" },
   { value: "dealer_c", label: "Occasional trade buyer" },
   { value: "dealer_b", label: "Regular dealer, ordering in volume" },

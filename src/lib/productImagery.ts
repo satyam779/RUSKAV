@@ -22,7 +22,6 @@ const POOLS: Record<string, Pool> = {
       g("studio-trays-black"),
       g("divided-trays-stack"),
       g("tray-service-narrow"),
-      g("tray-service-black"),
     ],
     context: [
       g("tray-in-service-meal"),

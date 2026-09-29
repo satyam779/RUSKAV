@@ -26,7 +26,7 @@ import { ProductCard } from "../components/ProductCard";
 import { TradeGate } from "../components/TradeGate";
 import { NotFoundPage } from "./NotFoundPage";
 import { cart, useCartLines } from "../lib/cart";
-import { effectivePrice, hasPrice, useProducts } from "../lib/products";
+import { catalogueProduct, effectivePrice, hasPrice, useProducts } from "../lib/products";
 import { useProductSeo } from "../lib/seo";
 
 /** Gross case weight, trimmed of the trailing zeros a numeric column carries. */
@@ -42,11 +42,14 @@ export function ProductPage() {
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
-  const product = products.find((p) => p.code === code);
+  // Only once the live list has loaded, or a listed product would flash up as
+  // its unpriced catalogue entry first.
+  const product =
+    products.find((p) => p.code === code) ?? (loading ? undefined : catalogueProduct(code));
   const category = categories.find((c) => c.id === product?.categoryId);
 
   useEffect(() => {
-    if (product) document.title = `${product.code} — ${product.name} | Ruskav`;
+    if (product) document.title = `${product.code} ${product.name} | Ruskav`;
   }, [product]);
 
   useProductSeo(product, category?.name);
@@ -146,7 +149,7 @@ export function ProductPage() {
         <nav aria-label="Breadcrumb" className="mx-auto max-w-6xl px-6">
           <ol className="flex flex-wrap items-center gap-2 text-xs text-ink-soft">
             <li>
-              <Link to="/shop" className="hover:text-brand">
+              <Link to="/shop" className="-my-2 inline-block py-2 hover:text-brand">
                 Shop
               </Link>
             </li>
@@ -154,7 +157,7 @@ export function ProductPage() {
               <>
                 <li aria-hidden="true">/</li>
                 <li>
-                  <Link to={`/products/${category.id}`} className="hover:text-brand">
+                  <Link to={`/products/${category.id}`} className="-my-2 inline-block py-2 hover:text-brand">
                     {category.shortName}
                   </Link>
                 </li>
@@ -337,7 +340,7 @@ export function ProductPage() {
               <div className="mt-8">
                 <p className="text-xs uppercase tracking-wider text-ink-soft/70">
                   {photographedColors > 0
-                    ? "Colourways — press one to see it"
+                    ? "Colourways (select one to see it)"
                     : "Available colourways"}
                 </p>
                 <ul className="mt-3 flex flex-wrap gap-3">
@@ -393,7 +396,7 @@ export function ProductPage() {
                           </button>
                         ) : (
                           <>
-                            <span title={`${COLOR_LABEL[c]} — available to order`}>{dot}</span>
+                            <span title={`${COLOR_LABEL[c]}, available to order`}>{dot}</span>
                             <span className="text-[10px] text-ink-soft">{COLOR_LABEL[c]}</span>
                           </>
                         )}
@@ -404,7 +407,7 @@ export function ProductPage() {
                 {photographedColors > 0 && photographedColors < product.colors.length && (
                   <p className="mt-3 text-[11px] text-ink-soft/80">
                     Colours marked with a dot are photographed. The rest are made to order
-                    in the same finish — ask us for a sample.
+                    in the same finish. Ask us for a sample.
                   </p>
                 )}
               </div>
@@ -420,7 +423,7 @@ export function ProductPage() {
           </div>
         </div>
 
-        <div className="mt-20">
+        <div className="mt-14 md:mt-20">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h2 className="font-display text-2xl font-medium text-ink">

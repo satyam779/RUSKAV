@@ -12,7 +12,7 @@ import { TradeGate } from "../components/TradeGate";
 import { CertBadge, MakeInIndiaMark } from "../components/icons/Badges";
 import { Eyebrow, Section, SectionHeading, buttonClass } from "../components/ui";
 import { useProducts } from "../lib/products";
-import { bioCategory, categories } from "../data/catalogue";
+import { bioCategory } from "../data/catalogue";
 
 const stats = [
   { value: "5", label: "Product families" },
@@ -31,22 +31,18 @@ const stats = [
 const sectors = [
   {
     name: "Schools & colleges",
-    detail: "Compartment trays that survive a thousand covers a day",
     image: "/gallery/compartment-trays-six.webp",
   },
   {
     name: "Hospitals",
-    detail: "Sealed carriers and lidded trays for ward service",
     image: "/gallery/compartment-carrier-loaded.webp",
   },
   {
     name: "QSR & food courts",
-    detail: "Fast food trays in eleven colourways, branded to your line",
     image: "/gallery/tray-fastfood-red.webp",
   },
   {
     name: "Hotels & catering",
-    detail: "Polycarbonate dinnerware and break-resistant drinkware",
     image: "/gallery/tumblers-frosted-table.webp",
   },
 ];
@@ -73,14 +69,12 @@ function Featured() {
       <SectionHeading
         kicker="In the shop"
         title="Order by the case, priced and ready."
-        intro="Case packs, colourways and trade pricing — add what you need and send it across in a couple of clicks."
         action={
           <Link
             to="/shop"
-            className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-brand transition hover:gap-3"
+            className="-my-2 py-2 text-sm font-semibold text-brand underline decoration-brand/30 underline-offset-4 transition hover:decoration-brand"
           >
             Shop the full range
-            <span aria-hidden="true">→</span>
           </Link>
         }
       />
@@ -117,7 +111,6 @@ function Sectors() {
       <SectionHeading
         kicker="Built for"
         title="Wherever the queue forms."
-        intro="Specified by school kitchens, hospital wards, food courts and hotel banqueting teams across India."
       />
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
         {sectors.map((s, i) => (
@@ -148,9 +141,6 @@ function Sectors() {
               <h3 className="font-display text-base font-medium leading-tight text-white md:text-lg">
                 {s.name}
               </h3>
-              <p className="mt-1 text-[11px] leading-relaxed text-white/65 md:text-xs">
-                {s.detail}
-              </p>
             </div>
           </motion.article>
         ))}
@@ -162,7 +152,7 @@ function Sectors() {
 /** The sustainable line, given its own band rather than a tile in a grid. */
 function BioBand() {
   return (
-    <section className="bg-bio-paper py-14 sm:py-20 md:py-28">
+    <section className="bg-bio-paper py-10 sm:py-14 md:py-20">
       <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 md:grid-cols-2 md:gap-16">
         <div className="relative">
           <div className="media-panel-bio aspect-[5/4] overflow-hidden rounded-[2rem]">
@@ -195,14 +185,13 @@ function BioBand() {
           <h2 className="font-display mt-4 text-balance text-3xl font-medium leading-[1.08] text-ink md:text-[2.6rem]">
             {bioCategory.tagline}
           </h2>
-          <p className="mt-5 text-balance leading-relaxed text-ink-soft">
-            {bioCategory.paragraphs[1]}
-          </p>
-          <ul className="mt-7 grid gap-3 sm:grid-cols-2">
+          <ul className="mt-6 flex flex-wrap gap-2">
             {bioCategory.points.map((p) => (
-              <li key={p.label} className="rounded-2xl border border-bio-dark/15 bg-white/50 p-4">
-                <p className="text-sm font-semibold text-ink">{p.label}</p>
-                <p className="mt-1 text-xs leading-relaxed text-ink-soft">{p.detail}</p>
+              <li
+                key={p.label}
+                className="rounded-full border border-bio-dark/20 bg-white/60 px-4 py-2 text-sm font-semibold text-ink"
+              >
+                {p.label}
               </li>
             ))}
           </ul>
@@ -238,40 +227,41 @@ export function HomePage() {
       <TrustStrip />
 
       {/* The deal, stated once, above everything a price could appear in. */}
-      <div className="bg-paper pt-14 md:pt-20">
+      <div className="bg-paper pt-10 md:pt-14">
         <div className="mx-auto max-w-6xl px-6">
           <TradeGate />
         </div>
       </div>
 
-      <Section className="relative overflow-hidden bg-paper">
+      <Section className="relative isolate overflow-hidden bg-paper">
+        {/* The full wordmark as a watermark across the section, behind the
+            copy and the figures (`isolate` keeps -z-10 inside the section). */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -right-24 -top-28 select-none font-script text-[280px] leading-none text-brand/[0.05] md:text-[420px]"
+          className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 -translate-y-1/2 select-none whitespace-nowrap text-center font-script text-[27vw] leading-none text-brand/[0.06] md:text-[21vw] 2xl:text-[20rem]"
         >
-          R
+          RUSKAV
         </div>
-        <div className="relative grid gap-12 md:grid-cols-[1fr_1.1fr] md:gap-16">
+        <div className="relative grid gap-8 md:grid-cols-[1fr_1.1fr] md:gap-16">
           <div>
             <Eyebrow>About Ruskav</Eyebrow>
             <h2 className="font-display mt-4 text-balance text-3xl font-medium leading-[1.06] text-ink md:text-[2.6rem]">
               Quality control isn&apos;t a department. It&apos;s the whole job.
             </h2>
-            <Link to="/about" className={buttonClass("outline", "mt-7")}>
-              Read our story
-            </Link>
-            <MakeInIndiaMark width={172} className="mt-10" />
+            {/* Side by side on a phone: stacked, the mark left a screen of
+                empty paper between the heading and the copy it introduces. */}
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-5 md:mt-7 md:block">
+              <Link to="/about" className={buttonClass("outline")}>
+                Read our story
+              </Link>
+              <MakeInIndiaMark width={172} className="w-[128px] shrink-0 md:mt-10 md:w-auto" />
+            </div>
           </div>
-          <div className="flex flex-col gap-6">
-            <p className="text-balance text-lg leading-relaxed text-ink-soft">
+          <div className="flex flex-col gap-5 md:gap-6">
+            <p className="text-balance text-base leading-relaxed text-ink-soft md:text-lg">
               RUSKAV Food Service Products is one of India&apos;s largest manufacturers of
-              international-quality food service products — fast food trays, compartment
+              international-quality food service products, with fast food trays, compartment
               trays, cafeteria trays, PC tumblers and PC dinnerware among them.
-            </p>
-            <p className="text-balance leading-relaxed text-ink-soft">
-              Every raw material we use is either FDA-approved or compliant with{" "}
-              <strong className="font-semibold text-ink">IS 10910</strong> for safe contact
-              with food, pharmaceuticals and drinking water.
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
               <CertBadge kind="food" />
@@ -282,7 +272,7 @@ export function HomePage() {
           </div>
         </div>
 
-        <dl className="mt-16 grid grid-cols-2 gap-8 border-t border-ink/10 pt-10 md:grid-cols-4">
+        <dl className="mt-12 grid grid-cols-2 gap-8 border-t border-ink/10 pt-8 md:mt-16 md:grid-cols-4 md:pt-10">
           {stats.map((s) => (
             <div key={s.label} className="border-l-2 border-brand/25 pl-4">
               <dt className="sr-only">{s.label}</dt>
@@ -297,36 +287,6 @@ export function HomePage() {
       <Featured />
       <Sectors />
       <BioBand />
-
-      <Section className="relative overflow-hidden bg-ink text-paper">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-brand"
-        />
-        <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
-          <div>
-            <Eyebrow tone="light">Distributor &amp; dealer enquiries</Eyebrow>
-            <h2 className="font-display mt-4 max-w-xl text-balance text-3xl font-medium leading-[1.08] md:text-[2.6rem]">
-              Tell us what you&apos;re serving, and how much of it.
-            </h2>
-            <p className="mt-5 max-w-lg text-balance leading-relaxed text-paper/65">
-              We&apos;ll come back with specifications, MOQs and pricing for your format —
-              across all {categories.length + 1} product families.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Link to="/contact" className={buttonClass("primary", "px-6 py-3")}>
-              Get in touch
-            </Link>
-            <Link
-              to="/shop"
-              className={buttonClass("outline", "px-6 py-3 !border-white/25 !text-paper hover:!border-white/60 hover:!text-white")}
-            >
-              Browse the shop
-            </Link>
-          </div>
-        </div>
-      </Section>
     </>
   );
 }

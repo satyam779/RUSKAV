@@ -84,7 +84,7 @@ function EnquiryCard({ enquiry }: { enquiry: MyEnquiry }) {
               </p>
             ) : (
               <p className="font-display mt-2.5 text-lg font-medium text-ink">
-                Priced — see the note below.
+                Priced. See the note below.
               </p>
             )}
             {enquiry.quote_notes && (
@@ -94,7 +94,7 @@ function EnquiryCard({ enquiry }: { enquiry: MyEnquiry }) {
             )}
             {enquiry.granted_tier && (
               <p className="mt-3 text-xs font-semibold text-brand-dark">
-                We&apos;ve put your account on a trade band — prices across the site now
+                We&apos;ve put your account on a trade band, so prices across the site now
                 show your rate.
               </p>
             )}
@@ -236,7 +236,7 @@ export function AccountPage() {
               <div className="mt-6">
                 <EmptyState
                   title="Nothing here yet"
-                  body="Ask us to price a format and it'll appear here with our answer against it. Requests you sent before signing in stay between you and our team — we'll reply to those by email."
+                  body="Ask us to price a format and it'll appear here with our answer against it. Requests you sent before signing in stay between you and our team. We'll reply to those by email."
                 >
                   <Link to="/contact" className={buttonClass("primary")}>
                     Request a quote

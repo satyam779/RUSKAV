@@ -1,3 +1,4 @@
+import { LabelIcon } from "../components/icons/LabelIcon";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { categories, bioCategory } from "../data/catalogue";
@@ -35,7 +36,7 @@ export function ProductsPage() {
         backdrop
         kicker="The range"
         title="Five product families, one standard of quality."
-        intro={`${allProducts.length} product codes across trays, compartment plates, dinnerware, drinkware and the bio-composite line — every piece designed to outlast a full day of service.`}
+        intro={`${allProducts.length} product codes across trays, compartment plates, dinnerware, drinkware and the bio-composite line. Every piece is designed to outlast a full day of service.`}
       >
         <div className="flex flex-wrap gap-3">
           <Link to="/shop" className={buttonClass("primary")}>
@@ -84,7 +85,8 @@ export function ProductsPage() {
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col p-6">
-                  <p className="eyebrow-rule text-[10px] font-bold uppercase tracking-[0.26em] text-brand">
+                  <p className="eyebrow-rule text-brand">
+                    <LabelIcon label={c.kicker} />
                     {c.kicker}
                   </p>
                   <h2 className="font-display mt-3 text-xl font-medium leading-tight text-ink transition group-hover:text-brand">
@@ -112,7 +114,7 @@ export function ProductsPage() {
         <SectionHeading
           kicker="Not listed?"
           title="Most of the range can be made to your format."
-          intro="Sizes, colourways and compartment layouts outside the catalogue are routine for us — tell us the format and the volume."
+          intro="Sizes, colourways and compartment layouts outside the catalogue are routine for us. Tell us the format and the volume."
         />
         <Link to="/contact" className={buttonClass("primary", "px-6 py-3")}>
           Ask about a custom size

@@ -190,7 +190,7 @@ export function CategoryPage() {
         </div>
 
         {restImages.length > 0 && (
-          <div className="mt-20 grid gap-4 sm:grid-cols-3">
+          <div className="mt-14 md:mt-20 grid gap-4 sm:grid-cols-3">
             {restImages.map((src) => (
               <div key={src} className="aspect-square overflow-hidden rounded-2xl bg-studio">
                 <img

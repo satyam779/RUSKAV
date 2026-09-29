@@ -176,7 +176,7 @@ function describeWriteError(err: unknown): string {
     return "The database refused the change: this account is signed in but is not an admin. Add its user id to the admins table (see supabase/make-admin.sql).";
   }
   if (code === "23503") {
-    return "That range does not exist in the database. Reload the dashboard — it recreates the five ranges on load — or run supabase/seed-catalogue.sql.";
+    return "That range does not exist in the database. Reload the dashboard (it recreates the five ranges on load) or run supabase/seed-catalogue.sql.";
   }
   if (code === "23505") {
     return "That product code already exists. Codes have to be unique.";
@@ -185,7 +185,7 @@ function describeWriteError(err: unknown): string {
     return "The tables are missing. Run supabase/schema.sql in the Supabase SQL editor first.";
   }
   if (code === "42703") {
-    return "Your database is a version behind this dashboard — it is missing a column the form writes (the HSN, lead time, case weight and carton fields are the recent ones). Re-run supabase/schema.sql in the SQL editor; it only adds what is missing.";
+    return "Your database is a version behind this dashboard. It is missing a column the form writes (the HSN, lead time, case weight and carton fields are the recent ones). Re-run supabase/schema.sql in the SQL editor; it only adds what is missing.";
   }
   return message;
 }
@@ -315,7 +315,7 @@ function ProductEditor({
       throw new Error(`${file.name} is not an image.`);
     }
     if (file.size > 5 * 1024 * 1024) {
-      throw new Error(`${file.name} is larger than 5 MB — please resize it first.`);
+      throw new Error(`${file.name} is larger than 5 MB. Please resize it first.`);
     }
     const path = storagePathFor(draft.code, file.name);
 
@@ -943,7 +943,7 @@ function ProductEditor({
           <span className={label}>…or paste an image URL</span>
           <input
             className={field}
-            placeholder="/gallery/studio-plates.webp — press Enter to add"
+            placeholder="/gallery/studio-plates.webp, then press Enter"
             onKeyDown={(e) => {
               if (e.key !== "Enter") return;
               e.preventDefault();
@@ -1077,8 +1077,8 @@ function ProductsTab() {
       const added = inserted?.length ?? 0;
       setMessage(
         added === 0
-          ? `All ${rows.length} catalogue codes were already in the database — nothing to add.`
-          : `Imported ${added} product ${added === 1 ? "code" : "codes"}. They are published with no price yet — set prices and they appear in the shop.`
+          ? `All ${rows.length} catalogue codes were already in the database. Nothing to add.`
+          : `Imported ${added} product ${added === 1 ? "code" : "codes"}. They are published with no price yet. Set prices and they appear in the shop.`
       );
       await load();
     } catch (err) {
@@ -1105,7 +1105,7 @@ function ProductsTab() {
 
   const remove = async (product: ShopProduct) => {
     if (!supabase) return;
-    if (!window.confirm(`Delete ${product.code} — ${product.name}? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete ${product.code} (${product.name})? This cannot be undone.`)) return;
     const { error: err } = await supabase.from("products").delete().eq("id", product.id);
     if (err) {
       setError(err.message);
@@ -1258,7 +1258,7 @@ function ProductsTab() {
                     {p.discountPercent > 0 ? (
                       <Badge tone="brand">{Math.round(p.discountPercent)}%</Badge>
                     ) : (
-                      <span className="text-ink-soft/60">—</span>
+                      <span className="text-ink-soft/60">-</span>
                     )}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-soft">
@@ -1656,7 +1656,7 @@ function QuotePanel({
       }
     } else if (grant && !row.user_id) {
       setDone(
-        "Quote saved. This enquiry has no account attached, so the band could not be applied — set it on the Customers tab once they sign up."
+        "Quote saved. This enquiry has no account attached, so the band could not be applied. Set it on the Customers tab once they sign up."
       );
     } else {
       setDone("Quote saved.");
@@ -1696,7 +1696,7 @@ function QuotePanel({
             <option value="">Leave their band unchanged</option>
             {tiers.map((t) => (
               <option key={t.key} value={t.key}>
-                {t.label} — {t.discountPercent}% off list
+                {t.label} ({t.discountPercent}% off list)
               </option>
             ))}
           </select>
@@ -1796,7 +1796,7 @@ function EnquiriesTab() {
     return (
       <EmptyState
         title="No enquiries yet"
-        body="Messages sent from the contact form land here, newest first — with the product codes the sender had collected."
+        body="Messages sent from the contact form land here, newest first, with the product codes the sender had collected."
       />
     );
   }
@@ -1997,7 +1997,7 @@ function EnquiriesTab() {
                     </p>
                   ) : (
                     <p className="mt-4 text-sm italic text-ink-soft/70">
-                      No message — they only picked a range.
+                      No message. They only picked a range.
                     </p>
                   )}
 
@@ -2092,7 +2092,7 @@ const PROVIDER_LABEL: Record<string, string> = {
 const formatDay = (iso: string | null) =>
   iso
     ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-    : "—";
+    : "-";
 
 /**
  * Everyone who has signed in.
@@ -2528,7 +2528,7 @@ export function AdminPage() {
           title={session ? "This account isn't an admin." : "Please sign in."}
           intro={
             session
-              ? "You're signed in, but your user id isn't in the admins table — so the database will refuse any changes."
+              ? "You're signed in, but your user id isn't in the admins table, so the database will refuse any changes."
               : "The dashboard is for staff managing products, prices and orders."
           }
           tone="dim"

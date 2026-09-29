@@ -1,3 +1,4 @@
+import { LabelIcon } from "./icons/LabelIcon";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTradeAccess } from "../lib/trade";
@@ -49,29 +50,27 @@ export function AnnouncementBar() {
   return (
     <div className="relative bg-ink text-paper/85">
       <div className="mx-auto flex h-9 max-w-7xl items-center justify-center gap-6 px-9 md:h-10 md:px-8">
-        <p className="flex items-center gap-6 truncate text-[10px] font-semibold uppercase tracking-[0.1em] sm:text-[11px] sm:tracking-[0.16em] md:tracking-[0.2em]">
+        <p className="flex items-center gap-6 self-stretch truncate text-[12.5px] font-medium">
           {unlocked ? (
             <span className="flex items-center gap-2">
-              <span
-                aria-hidden="true"
-                className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-light shadow-[0_0_0_3px_rgba(232,112,95,0.25)]"
-              />
+              <LabelIcon label="Trade pricing unlocked" className="text-brand-light" />
               Trade pricing unlocked
             </span>
           ) : (
-            <Link to="/login" className="font-bold text-brand-light underline-offset-4 hover:underline">
+            <Link to="/login" className="flex items-center self-stretch font-bold text-brand-light underline-offset-4 hover:underline">
+              <LabelIcon label="Trade prices" className="mr-1.5" />
               <span className="sm:hidden">Sign in for trade prices</span>
               <span className="hidden sm:inline">Sign in to unlock wholesale pricing</span>
             </Link>
           )}
-          <span aria-hidden="true" className="hidden text-brand-light/60 sm:inline">
-            ✦
+          <span className="hidden items-center gap-1.5 sm:inline-flex">
+            <LabelIcon label="Made in India" className="text-brand-light" />
+            Made in India · FDA-approved materials
           </span>
-          <span className="hidden sm:inline">Made in India · FDA-approved materials</span>
-          <span aria-hidden="true" className="hidden text-brand-light/60 lg:inline">
-            ✦
+          <span className="hidden items-center gap-1.5 lg:inline-flex">
+            <LabelIcon label="Distributor enquiries" className="text-brand-light" />
+            Distributor &amp; dealer enquiries welcome
           </span>
-          <span className="hidden lg:inline">Distributor &amp; dealer enquiries welcome</span>
         </p>
       </div>
 
@@ -79,7 +78,7 @@ export function AnnouncementBar() {
         type="button"
         onClick={dismiss}
         aria-label="Dismiss announcement"
-        className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-paper/60 transition hover:bg-white/15 hover:text-white md:right-4"
+        className="absolute right-0 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-paper/60 transition hover:bg-white/15 hover:text-white md:right-3 md:h-10 md:w-10"
       >
         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
           <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />

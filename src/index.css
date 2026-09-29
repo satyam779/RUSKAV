@@ -1,25 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Fraunces", "Georgia", serif;
-  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-display: "Archivo", system-ui, sans-serif;
+  --font-sans: "Archivo", system-ui, sans-serif;
   --font-script: "Playball", cursive;
 
-  --color-ink: #17140f;
-  --color-ink-soft: #4a463f;
-  --color-paper: #faf8f4;
-  --color-paper-dim: #f2efe8;
-  --color-studio: #eeece7;
+  --color-ink: #0f1b33;
+  --color-ink-soft: #4a5468;
+  --color-paper: #ffffff;
+  --color-paper-dim: #f2f4f7;
+  --color-studio: #edf0f4;
   --color-brand: #b91c2e;
   --color-brand-dark: #8f1522;
-  --color-brand-light: #e8705f;
+  --color-brand-light: #ff5b63;
   --color-bio: #b79c78;
   --color-bio-dark: #8a7250;
   --color-bio-paper: #efe8d8;
-  --color-line: #e3ded2;
+  --color-line: #e2e6ec;
 
   --color-brand-tint: #fbeef0;
-  --color-ink-muted: #6b665d;
+  --color-ink-muted: #697386;
+
+  /* The moulded colourways, used as accents and in the colour strip. */
+  --color-tray-yellow: #f4b400;
+  --color-tray-green: #13875b;
+  --color-tray-blue: #1f57c3;
+  --color-tray-brown: #7b4a2b;
 
   --animate-marquee: marquee 32s linear infinite;
   --animate-fade-up: fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -121,10 +127,45 @@ html {
 
 .font-display {
   font-family: var(--font-display);
+  font-stretch: 108%;
+  font-weight: 780;
+  letter-spacing: -0.02em;
 }
 
 .text-balance {
   text-wrap: balance;
+}
+
+/* Balancing suits a two-line heading. On a phone it also shortens every line
+   of a body paragraph to even them out, which leaves an empty strip down the
+   right of the screen. Left-aligned paragraphs fill the width there instead;
+   centred ones keep their even shape. */
+@media (max-width: 767px) {
+  p.text-balance:not(.text-center, .text-center *) {
+    text-wrap: pretty;
+  }
+}
+
+/* iOS zooms the whole page into any form field set under 16px the moment it
+   takes focus, and leaves it zoomed. On touch screens the small sizes resolve
+   to 16px inside fields; a field already set larger keeps its size. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    --text-xs: 1rem;
+    --text-sm: 1rem;
+  }
+}
+
+@layer base {
+  @media (pointer: coarse) {
+    input,
+    select,
+    textarea {
+      font-size: 1rem;
+    }
+  }
 }
 
 /* Every interactive element gets a visible keyboard ring. Several components
@@ -162,18 +203,18 @@ footer :focus-visible {
     background: var(--color-paper-dim);
   }
   ::-webkit-scrollbar-thumb {
-    background: #c4bfb2;
+    background: #c3c9d3;
     border: 2px solid var(--color-paper-dim);
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #a8a294;
+    background: #9aa3b2;
   }
 }
 
 html {
   scrollbar-width: thin;
-  scrollbar-color: #c4bfb2 var(--color-paper-dim);
+  scrollbar-color: #c3c9d3 var(--color-paper-dim);
 }
 
 /* Honour the OS "reduce motion" setting. Framer Motion components are handled
@@ -195,13 +236,20 @@ html {
   }
 
   /* The marquee carries real content, so it needs to stay readable once the
-     animation stops — let it wrap instead of running off the edge. */
+     animation stops: one copy of the list, in one row the reader swipes
+     through. Wrapping it stacked both copies into repeated, clipped rows. */
   .animate-marquee {
     animation: none !important;
-    width: 100% !important;
-    flex-wrap: wrap;
-    justify-content: center;
-    white-space: normal;
+    width: auto !important;
+    overflow-x: auto;
+    padding-inline: 1.25rem;
+    scrollbar-width: none;
+  }
+  .animate-marquee::-webkit-scrollbar {
+    display: none;
+  }
+  .animate-marquee > [aria-hidden="true"] {
+    display: none;
   }
 }
 
@@ -265,7 +313,7 @@ html {
 .media-panel {
   background:
     radial-gradient(120% 90% at 30% 12%, #ffffff 0%, rgba(255, 255, 255, 0) 58%),
-    linear-gradient(160deg, #f3f1ec 0%, #e9e6df 55%, #e2ded5 100%);
+    linear-gradient(160deg, #f4f6f9 0%, #eaedf2 55%, #e1e5eb 100%);
 }
 
 .media-panel-bio {
@@ -277,24 +325,21 @@ html {
 .media-panel-ink {
   background:
     radial-gradient(120% 90% at 30% 10%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 60%),
-    linear-gradient(160deg, #23201a 0%, #17140f 100%);
+    linear-gradient(160deg, #1a2847 0%, #0f1b33 100%);
 }
 
-/**
- * The red accent rule under a section kicker. The brand is a single red and it
- * was barely on the page; a 28px rule beside every eyebrow puts it on every
- * screen without turning anything red.
- */
-.eyebrow-rule::before {
-  content: "";
-  display: inline-block;
-  width: 26px;
-  height: 2px;
-  margin-right: 0.7rem;
-  vertical-align: 0.28em;
-  background: currentColor;
-  border-radius: 2px;
+/* Section labels: sentence case with a small line icon (see LabelIcon),
+   instead of tracked capitals behind a rule. */
+.eyebrow-rule {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
+
 
 /* Cards lift on hover rather than changing colour — cheaper to paint and it
    keeps the product, not the container, as the thing that moves. */

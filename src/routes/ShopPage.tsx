@@ -305,7 +305,7 @@ export function ShopPage() {
               body={
                 isAdmin
                   ? "There are no published products yet. Add them on the dashboard and they appear here straight away."
-                  : "We're putting the priced range online. In the meantime, browse the full catalogue and tell us what you need — we'll quote it."
+                  : "We're putting the priced range online. In the meantime, browse the full catalogue and tell us what you need and we'll quote it."
               }
             >
               {isAdmin ? (
@@ -326,7 +326,7 @@ export function ShopPage() {
           <div className="mt-8">
             <EmptyState
               title="Nothing matches that."
-              body="Try a shorter search or clear the filters. If you need a size that isn't listed, ask us — much of the range is made to order."
+              body="Try a shorter search or clear the filters. If you need a size that isn't listed, ask us. Much of the range is made to order."
             >
               <button type="button" onClick={reset} className={buttonClass("outline")}>
                 Clear filters

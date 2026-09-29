@@ -1,3 +1,4 @@
+import { LabelIcon } from "./icons/LabelIcon";
 import { motion } from "framer-motion";
 import { bioCategory } from "../data/catalogue";
 
@@ -7,7 +8,7 @@ export function Sustainability() {
   return (
     <section
       id={bioCategory.id}
-      className="scroll-mt-[calc(var(--header-h)+1rem)] bg-bio-paper py-14 sm:py-20 md:py-32"
+      className="scroll-mt-[calc(var(--header-h)+1rem)] bg-bio-paper py-10 sm:py-14 md:py-24"
     >
       <div className="mx-auto max-w-6xl px-6">
         <div className="grid gap-14 md:grid-cols-2 md:gap-16">
@@ -17,7 +18,7 @@ export function Sustainability() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
-            <p className="eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] text-bio-dark">{bioCategory.kicker}</p>
+            <p className="eyebrow-rule text-bio-dark"><LabelIcon label={bioCategory.kicker} />{bioCategory.kicker}</p>
             <h2 className="font-display mt-4 text-balance text-4xl font-medium leading-[1.08] text-ink md:text-5xl">
               {bioCategory.tagline}
             </h2>
@@ -72,14 +73,14 @@ export function Sustainability() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.7, ease: "easeOut" }}
-            className="mt-14 flex items-center gap-6 rounded-3xl bg-white/40 p-6 md:p-8"
+            className="mt-10 flex items-center gap-6 rounded-3xl md:mt-14 bg-white/40 p-6 md:p-8"
           >
             <div className="hidden h-28 w-28 shrink-0 overflow-hidden rounded-2xl sm:block">
               <img src={imgC} alt="" loading="lazy" decoding="async" width={400} height={400} className="h-full w-full object-cover" />
             </div>
             <p className="text-balance leading-relaxed text-ink-soft">
               Every item in the bio-composite line is engineered to swap in wherever a
-              conventional tray, plate, bowl or cup is used today — no compromise on
+              conventional tray, plate, bowl or cup is used today, with no compromise on
               durability, same wash-and-reuse cycle, a lighter footprint on the way
               out. Ask us for MOQs, lead times and pricing for your format.
             </p>

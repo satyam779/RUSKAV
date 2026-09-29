@@ -135,7 +135,7 @@ export const ENQUIRY_STATUS_COPY: Record<string, { label: string; blurb: string 
   },
   quoted: {
     label: "Quoted",
-    blurb: "We've priced this for you — the figures are below.",
+    blurb: "We've priced this for you. The figures are below.",
   },
   replied: {
     label: "Replied",

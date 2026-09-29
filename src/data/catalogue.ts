@@ -112,7 +112,7 @@ export const categories: Category[] = [
     kicker: "Front of house",
     tagline: "Built to survive the rush, table after table.",
     paragraphs: [
-      "They are sturdy and attractive, for solid, user-friendly service — made from virgin, food-contact-safe material and perfected for self-serve, quick-serve dining in schools, colleges and restaurants.",
+      "They are sturdy and attractive, for solid, user-friendly service. Made from virgin, food-contact-safe material and perfected for self-serve, quick-serve dining in schools, colleges and restaurants.",
       "Moulded in highly durable ABS and Co-Polymer with an attractively textured basket-weave surface that hides scratches through years of daily washing and stacking.",
     ],
     bullets: commonCafeteriaBullets,
@@ -120,7 +120,7 @@ export const categories: Category[] = [
     backdropImage: "/gallery/tray-in-service-red.webp",
     secondaryImages: [
       "/gallery/tray-fastfood-red.webp",
-      "/gallery/tray-service-black.webp",
+      "/gallery/studio-trays-black.webp",
       "/gallery/tray-service-narrow.webp",
       "/gallery/tray-in-service-dark.webp",
     ],
@@ -244,10 +244,10 @@ export const categories: Category[] = [
     name: "Compartment Trays & Plates",
     shortName: "Compartment Trays",
     kicker: "Portion control",
-    tagline: "One tray, every course — sorted.",
+    tagline: "One tray, every course, sorted.",
     paragraphs: [
       "Sturdy and attractive compartment plates for self-serve, quick-serve dining across cafeterias, food courts, hospitals, schools, colleges and restaurants.",
-      "Moulded in highly durable, long-lasting Co-Polymer with an attractively textured surface that hides scratches — available with translucent snap lids for pre-packed, on-the-go meals.",
+      "Moulded in highly durable, long-lasting Co-Polymer with an attractively textured surface that hides scratches. Available with translucent snap lids for pre-packed, on-the-go meals.",
     ],
     bullets: [
       "Sturdy and attractive, for solid, user-friendly service",
@@ -367,7 +367,7 @@ export const categories: Category[] = [
           { code: "RTX04L", description: "06 Compartment Translucent Lid", size: "10\" x 13\"", casePack: "50" },
         ],
         highlight:
-          "Purpose-built for insulated pan carriers such as the HBI X04 — 24 trays fit per carrier, keeping pre-packed meals at temperature from kitchen to table. Colour-coded for different dietary meal types.",
+          "Purpose-built for insulated pan carriers such as the HBI X04: 24 trays fit per carrier, keeping pre-packed meals at temperature from kitchen to table. Colour-coded for different dietary meal types.",
         certs: ["food", "dishwasher", "freezer", "microwave", "tuv"],
       },
     ],
@@ -379,7 +379,7 @@ export const categories: Category[] = [
     kicker: "On the table",
     tagline: "The look of glass. None of the breakage.",
     paragraphs: [
-      "Ruskav Dinnerware has set the industry standard for functional beauty and lasting value — dependable Polycarbonate and Co-Polymer pieces that feature the look and feel of glass, at a fraction of the risk.",
+      "Ruskav Dinnerware has set the industry standard for functional beauty and lasting value, with dependable Polycarbonate and Co-Polymer pieces that feature the look and feel of glass, at a fraction of the risk.",
       "They weigh up to 50% less than glass, making service easier and safer for staff, and cost about 33% less than comparable glassware. Less breakage means lower replacement costs and less time spent cleaning up broken glass.",
     ],
     bullets: [
@@ -466,7 +466,7 @@ export const categories: Category[] = [
     kicker: "Beverage service",
     tagline: "Glassware looks. Zero shatter risk.",
     paragraphs: [
-      "Ruskav drinkware features the look and feel of glass while offering the cost savings and lightweight handling of break-resistant plastic — up to 50% lighter, making it easier and safer for staff to carry and serve.",
+      "Ruskav drinkware features the look and feel of glass while offering the cost savings and lightweight handling of break-resistant plastic, up to 50% lighter, making it easier and safer for staff to carry and serve.",
       "Every piece is finished with a Sani-Rim lip for sanitary drinking, a textured exterior that resists scratching, and a smooth interior for easy cleaning. Stacking lugs make storage and transport effortless.",
     ],
     bullets: [
@@ -530,7 +530,7 @@ export const bioCategory = {
   tagline: "Farm waste, reimagined as tableware.",
   paragraphs: [
     "Biocomposites made with fast-renewable starch, bamboo, rice husk, coffee husk and olefin-based binders that are either bio-based, recycled or fossil-based.",
-    "Instead of crop residue such as rice husk being burnt, we help farmers put it to use — reducing CO2 emissions by working it directly into the biocomposite material.",
+    "Instead of crop residue such as rice husk being burnt, we help farmers put it to use, reducing CO2 emissions by working it directly into the biocomposite material.",
     "It's a choice that supports the circular economy and environmental sustainability: affordable, scalable sustainability that delivers real value in reduced carbon footprint and conserved resources.",
   ],
   points: [

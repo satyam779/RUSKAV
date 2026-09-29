@@ -1,3 +1,4 @@
+import { LabelIcon } from "./icons/LabelIcon";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { loginHref, useTradeAccess } from "../lib/trade";
@@ -61,8 +62,8 @@ export function PageHeader({
     <header
       className={`relative overflow-hidden bg-cover bg-center ${tones[tone]} ${
         backdrop
-          ? "flex min-h-[78svh] items-center pb-16 pt-[calc(var(--header-h)+3rem)] md:min-h-[100svh] md:pb-20 md:pt-[calc(var(--header-h)+5rem)]"
-          : "pb-14 pt-[calc(var(--header-h)+3rem)] md:pb-20 md:pt-[calc(var(--header-h)+4.5rem)]"
+          ? "flex min-h-[78svh] items-center pb-12 pt-[calc(var(--header-h)+2rem)] md:min-h-[100svh] md:pb-16 md:pt-[calc(var(--header-h)+4rem)]"
+          : "pb-10 pt-[calc(var(--header-h)+2rem)] md:pb-14 md:pt-[calc(var(--header-h)+3.5rem)]"
       }`}
       style={backdropStyle}
     >
@@ -104,7 +105,7 @@ export function Section({
   return (
     <section
       id={id}
-      className={`scroll-mt-[calc(var(--header-h)+1rem)] py-14 sm:py-20 md:py-28 ${className}`}
+      className={`scroll-mt-[calc(var(--header-h)+1rem)] py-10 sm:py-14 md:py-20 ${className}`}
     >
       <div className="mx-auto max-w-6xl px-6">{children}</div>
     </section>
@@ -131,9 +132,8 @@ export function Eyebrow({
     muted: "text-ink-soft/70",
   };
   return (
-    <p
-      className={`eyebrow-rule text-[11px] font-bold uppercase tracking-[0.3em] ${tones[tone]} ${className}`}
-    >
+    <p className={`eyebrow-rule ${tones[tone]} ${className}`}>
+      <LabelIcon label={typeof children === "string" ? children : ""} />
       {children}
     </p>
   );
@@ -153,7 +153,7 @@ export function SectionHeading({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-12 flex flex-col gap-5 md:flex-row md:items-end md:justify-between md:gap-10">
+    <div className="mb-8 flex flex-col gap-5 md:mb-12 md:flex-row md:items-end md:justify-between md:gap-10">
       <div className="max-w-2xl">
         {kicker && <Eyebrow tone={tone === "ink" ? "light" : "brand"}>{kicker}</Eyebrow>}
         <h2
@@ -569,6 +569,19 @@ export function ProductImage({
         className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-ink/[0.07]"
       />
       {children}
+    </div>
+  );
+}
+
+/** The moulded colourways as a strip, the one decoration the brand owns. */
+const COLOURWAYS = ["bg-brand", "bg-tray-yellow", "bg-tray-green", "bg-tray-blue", "bg-paper", "bg-tray-brown"];
+
+export function ColourStrip({ vertical = false, className = "" }: { vertical?: boolean; className?: string }) {
+  return (
+    <div aria-hidden="true" className={`flex ${vertical ? "flex-col" : ""} ${className}`}>
+      {COLOURWAYS.map((c) => (
+        <span key={c} className={`flex-1 ${c}`} />
+      ))}
     </div>
   );
 }

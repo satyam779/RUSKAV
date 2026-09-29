@@ -22,7 +22,7 @@ const pillars = [
   },
   {
     title: "Coded, recyclable materials",
-    body: "ABS, Co-Polymer (5 PP), Polycarbonate (PC) and Bio-Composite — every piece marked for responsible end-of-life.",
+    body: "ABS, Co-Polymer (5 PP), Polycarbonate (PC) and Bio-Composite. Every piece is marked for responsible end-of-life.",
   },
   {
     title: "Mould-to-crate quality control",
@@ -133,7 +133,7 @@ export function QualityPage() {
         <SectionHeading
           kicker="Materials"
           title="Four materials, chosen for the job."
-          intro="Which one a line is moulded in is a decision about heat, breakage and cost — not a preference."
+          intro="Which one a line is moulded in is a decision about heat, breakage and cost, not a preference."
         />
         <div className="overflow-x-auto rounded-3xl border border-ink/10">
           <table className="w-full min-w-[720px] text-left text-sm">
@@ -224,7 +224,7 @@ export function QualityPage() {
               ))}
             </dl>
             <p className="mt-4 text-xs leading-relaxed text-ink-soft">
-              Exact figures vary by line and material — every product page and specification
+              Exact figures vary by line and material. Every product page and specification
               table carries the values for that item.
             </p>
           </div>

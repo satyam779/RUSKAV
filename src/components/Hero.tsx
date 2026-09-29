@@ -1,3 +1,5 @@
+import { LabelIcon } from "./icons/LabelIcon";
+import { Link } from "react-router-dom";
 import { useEffect, useRef } from "react";
 import type { ReactNode, RefObject } from "react";
 
@@ -26,21 +28,23 @@ function phaseOpacity(p: number, [a, b, c, d]: Phase["range"], first = false, la
   return last ? 1 : 0;
 }
 
-function HeroActions() {
+// Routes, not anchors: the finder and the enquiry form live on their own
+// pages, so `#catalogue` and `#contact` on the home page went nowhere.
+function HeroActions({ className = "justify-center" }: { className?: string }) {
   return (
-    <div className="pointer-events-auto mt-8 flex flex-wrap items-center justify-center gap-3">
-      <a
-        href="#catalogue"
-        className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-paper transition hover:bg-brand"
+    <div className={`pointer-events-auto mt-8 flex flex-wrap items-center gap-3 ${className}`}>
+      <Link
+        to="/products"
+        className="rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-brand/30 transition hover:bg-brand-dark"
       >
-        Browse the catalogue
-      </a>
-      <a
-        href="#contact"
-        className="rounded-full border border-ink/20 bg-paper/40 px-6 py-3 text-sm font-semibold text-ink backdrop-blur-sm transition hover:border-ink/40"
+        Browse the range
+      </Link>
+      <Link
+        to="/contact"
+        className="rounded-full border border-ink/20 bg-paper/60 px-6 py-3 text-sm font-semibold text-ink backdrop-blur-sm transition hover:border-ink/40"
       >
         Get in touch
-      </a>
+      </Link>
     </div>
   );
 }
@@ -51,10 +55,11 @@ const phases: Phase[] = [
     first: true,
     content: (
       <>
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.4em] text-brand">
+        <p className="eyebrow-rule mb-4 text-brand">
+          <LabelIcon label="Ruskav Food Service Products" />
           Ruskav Food Service Products
         </p>
-        <h1 className="font-display text-balance text-[13vw] font-medium leading-[0.95] text-ink sm:text-6xl md:text-7xl">
+        <h1 className="font-display text-balance text-[10vw] leading-[0.98] text-ink sm:text-5xl md:text-6xl">
           Serving quality,
           <br /> tray after tray.
         </h1>
@@ -68,12 +73,12 @@ const phases: Phase[] = [
     range: [0.2, 0.3, 0.42, 0.5],
     content: (
       <>
-        <h2 className="font-display text-balance text-[10vw] font-medium leading-[1] text-ink sm:text-5xl md:text-6xl">
+        <h2 className="font-display text-balance text-[8.5vw] leading-[1] text-ink sm:text-5xl md:text-6xl">
           Engineered for
           <br /> the rush.
         </h2>
         <p className="mx-auto mt-5 max-w-md text-balance text-base text-ink-soft md:text-lg">
-          FDA-approved ABS &amp; Co-Polymer, tested to IS 10910 — dishwasher and
+          FDA-approved ABS &amp; Co-Polymer, tested to IS 10910. Dishwasher and
           microwave safe by design.
         </p>
       </>
@@ -83,7 +88,7 @@ const phases: Phase[] = [
     range: [0.48, 0.58, 0.7, 0.78],
     content: (
       <>
-        <h2 className="font-display text-balance text-[10vw] font-medium leading-[1] text-ink sm:text-5xl md:text-6xl">
+        <h2 className="font-display text-balance text-[8.5vw] leading-[1] text-ink sm:text-5xl md:text-6xl">
           A finish for
           <br /> every table.
         </h2>
@@ -99,7 +104,7 @@ const phases: Phase[] = [
     last: true,
     content: (
       <>
-        <h2 className="font-display text-balance text-[10vw] font-medium leading-[1] text-ink sm:text-5xl md:text-6xl">
+        <h2 className="font-display text-balance text-[8.5vw] leading-[1] text-ink sm:text-5xl md:text-6xl">
           Proudly made
           <br /> in India.
         </h2>
@@ -120,30 +125,32 @@ const phases: Phase[] = [
  */
 function StaticHero() {
   return (
-    <section id="top" className="relative min-h-[88svh] overflow-hidden bg-studio">
-      <img
-        src={POSTER}
-        alt="A stack of Ruskav compartment trays in ten colourways."
-        width={1400}
-        height={1400}
-        fetchPriority="high"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-paper/85 via-paper/75 to-paper/95" />
-
-      <div className="relative grid min-h-[88svh] place-items-center px-6 py-24">
-        <div className="w-full max-w-2xl text-center">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.4em] text-brand">
-            Ruskav Food Service Products
-          </p>
-          <h1 className="font-display text-balance text-[12vw] font-medium leading-[0.98] text-ink sm:text-5xl md:text-6xl">
+    // Split rather than a photo under a white wash: the colourways are the
+    // product, and fading them to pastel is what made this screen look flat.
+    <section
+      id="top"
+      className="relative overflow-hidden bg-paper pb-10 pt-[calc(var(--header-h)+1.75rem)] md:pb-16 md:pt-[calc(var(--header-h)+3.5rem)]"
+    >
+      <div className="mx-auto grid max-w-6xl items-center gap-8 px-6 md:grid-cols-[1.05fr_1fr] md:gap-12">
+        <div>
+          <p className="eyebrow-rule text-brand"><LabelIcon label="Ruskav Food Service Products" />Ruskav Food Service Products</p>
+          <h1 className="font-display mt-4 text-balance text-[2.3rem] leading-[1.02] text-ink sm:text-5xl lg:text-[4rem]">
             Serving quality, tray after tray.
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-balance text-base text-ink-soft">
-            Trusted across schools, hospitals, cafeterias and QSRs nationwide —
-            FDA-approved, dishwasher and microwave safe, proudly made in India.
+          <p className="mt-5 max-w-md text-base text-ink-soft md:text-lg">
+            Trusted across schools, hospitals, cafeterias and QSRs nationwide.
           </p>
-          <HeroActions />
+          <HeroActions className="justify-start" />
+        </div>
+        <div className="overflow-hidden rounded-[2rem] bg-studio shadow-[0_30px_60px_-35px_rgba(15,27,51,0.55)]">
+          <img
+            src={POSTER}
+            alt="A stack of Ruskav compartment trays in ten colourways."
+            width={1400}
+            height={1400}
+            fetchPriority="high"
+            className="aspect-[4/3] h-full w-full object-cover md:aspect-square"
+          />
         </div>
       </div>
     </section>
@@ -203,30 +210,61 @@ export function Hero({
       return -1;
     };
 
-    const drawFrame = (index: number) => {
-      const img = images.current?.[index];
-      if (!img || !ctx) return;
-
+    /** Where a frame lands so it covers the canvas, like object-fit: cover. */
+    const cover = (img: HTMLImageElement) => {
       const { width: cw, height: ch } = canvas;
       const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
       const dw = img.naturalWidth * scale;
       const dh = img.naturalHeight * scale;
-      ctx.clearRect(0, 0, cw, ch);
-      ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+      return [(cw - dw) / 2, (ch - dh) / 2, dw, dh] as const;
     };
 
-    /** Returns whether the frame on screen is the exact one for this scroll position. */
-    const render = () => {
+    /**
+     * Paints the single nearest frame. Blending neighbours showed as a double
+     * image on the moving product, so the glide comes from the eased position
+     * alone.
+     *
+     * Returns whether the frame drawn is the exact one for the position.
+     */
+    const paint = (position: number) => {
+      const frames = images.current;
+      if (!ctx || !frames) return false;
+      const wanted = Math.round(position);
+      const base = nearestLoaded(wanted);
+      if (base < 0) return false;
+      if (base !== paintedRef.current) {
+        paintedRef.current = base;
+        // Every frame is an opaque JPEG covering the whole canvas, so there is
+        // nothing to clear first; clearing only risks a blank flash.
+        const [x, y, w, h] = cover(frames[base]);
+        ctx.drawImage(frames[base], x, y, w, h);
+      }
+      return base === wanted;
+    };
+
+    /**
+     * Decode the next few frames in the direction of travel, so the first
+     * draw of each is not stalled by decoding a 1920px JPEG mid-scroll.
+     */
+    let decodedFrom = -1;
+    const decodeAhead = (from: number, direction: number) => {
+      if (from === decodedFrom) return;
+      decodedFrom = from;
+      for (let i = 1; i <= 6; i++) {
+        const img = images.current?.[from + i * direction];
+        if (img && isLoaded(img)) img.decode().catch(() => {});
+      }
+    };
+
+    const scrollProgress = () => {
       const rect = section.getBoundingClientRect();
       const scrollable = rect.height - window.innerHeight;
-      const progress = scrollable > 0 ? clamp01(-rect.top / scrollable) : 0;
+      return scrollable > 0 ? clamp01(-rect.top / scrollable) : 0;
+    };
 
-      const wanted = Math.min(count - 1, Math.round(progress * (count - 1)));
-      const available = nearestLoaded(wanted);
-      if (available >= 0 && available !== paintedRef.current) {
-        paintedRef.current = available;
-        drawFrame(available);
-      }
+    /** Draws everything for a progress value; returns whether the frame is exact. */
+    const apply = (progress: number) => {
+      const exact = paint(progress * (count - 1));
 
       phases.forEach((phase, i) => {
         const el = phaseRefs.current[i];
@@ -241,27 +279,54 @@ export function Hero({
         hintRef.current.style.opacity = String(1 - clamp01(progress / 0.05));
       }
 
-      return wanted === available;
+      return exact;
     };
 
-    let queued = false;
+    /**
+     * The drawn position eases towards the scroll position instead of jumping
+     * to it. A mouse wheel moves the page in ~100px steps, and a sequence that
+     * jumps with each one stutters; easing turns the steps into one glide.
+     * The easing is scaled by elapsed time, so a 120Hz screen settles at the
+     * same speed as a 60Hz one.
+     */
+    let target = scrollProgress();
+    let current = target;
+    let raf = 0;
+    let lastTime = 0;
+
+    const tick = (now: number) => {
+      const dt = lastTime ? Math.min(64, now - lastTime) : 16.7;
+      lastTime = now;
+      const diff = target - current;
+      const step = 1 - Math.pow(1 - 0.16, dt / 16.7);
+      current = Math.abs(diff) < 0.0004 ? target : current + diff * step;
+      apply(current);
+      decodeAhead(Math.round(current * (count - 1)), diff >= 0 ? 1 : -1);
+      if (current !== target) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        raf = 0;
+        lastTime = 0;
+      }
+    };
+
     const onScroll = () => {
-      if (queued) return;
-      queued = true;
-      requestAnimationFrame(() => {
-        queued = false;
-        render();
-      });
+      target = scrollProgress();
+      if (!raf) raf = requestAnimationFrame(tick);
     };
 
     const resize = () => {
+      // Full device resolution (up to 2x): the canvas upscales the frames
+      // with high-quality smoothing, which is sharper than letting the
+      // browser stretch a smaller canvas.
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
+      canvas.width = Math.round(window.innerWidth * dpr);
+      canvas.height = Math.round(window.innerHeight * dpr);
       // Resizing a canvas resets all context state, including smoothing.
       applySmoothing();
       paintedRef.current = -1;
-      render();
+      target = scrollProgress();
+      apply(current);
     };
 
     /**
@@ -271,8 +336,8 @@ export function Hero({
      * complete.
      */
     const settle = setInterval(() => {
-      const exact = render();
-      if (exact && isLoaded(images.current?.[count - 1])) clearInterval(settle);
+      const exact = apply(current);
+      if (exact && current === target && isLoaded(images.current?.[count - 1])) clearInterval(settle);
     }, 400);
 
     resize();
@@ -280,6 +345,7 @@ export function Hero({
     window.addEventListener("resize", resize);
     return () => {
       clearInterval(settle);
+      cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", resize);
     };
@@ -296,7 +362,7 @@ export function Hero({
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-paper/70" />
 
-        <div className="relative grid h-full w-full place-items-center px-6">
+        <div className="relative grid h-full w-full place-items-center px-6 pt-[var(--header-h)]">
           <div className="pointer-events-none grid w-full max-w-3xl place-items-center text-center">
             {phases.map((phase, i) => (
               <div
@@ -316,7 +382,7 @@ export function Hero({
         <div
           ref={hintRef}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-8 flex flex-col items-center gap-2 text-ink-soft"
+          className="pointer-events-none absolute inset-x-0 bottom-8 flex flex-col items-center gap-2 text-ink-soft supports-[height:100svh]:bottom-[calc(100lvh-100svh+2rem)]"
         >
           <span className="text-[10px] uppercase tracking-[0.35em]">Scroll</span>
           <svg width="14" height="22" viewBox="0 0 14 22" fill="none">

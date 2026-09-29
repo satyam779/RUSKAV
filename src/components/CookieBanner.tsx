@@ -80,7 +80,7 @@ export function CookieBanner() {
                 We keep this simple.
               </p>
               <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
-                We store only what the site needs to work — your order list and, if you
+                We store only what the site needs to work: your order list and, if you
                 sign in, your session. No tracking, no advertising, nothing sold on.{" "}
                 <Link to="/contact" className="font-semibold text-brand hover:underline">
                   Questions?

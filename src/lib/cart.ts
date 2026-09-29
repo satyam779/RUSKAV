@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import {
+  catalogueProduct,
   effectivePrice,
   hasPrice,
   round2,
@@ -139,7 +140,9 @@ export function priceCart(
   const byCode = new Map(products.map((p) => [p.code, p]));
 
   const priced: PricedLine[] = cartLines.flatMap((line) => {
-    const product = byCode.get(line.code);
+    // A code the shop does not list is still in the print catalogue, where it
+    // was added from; it stays on the order as a line to quote.
+    const product = byCode.get(line.code) ?? catalogueProduct(line.code);
     if (!product) return [];
     const unitPrice = tieredPrice(product, tierDiscountPercent);
     const lineTotal = unitPrice === null ? 0 : round2(unitPrice * line.quantity);

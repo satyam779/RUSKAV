@@ -100,7 +100,7 @@ export function ProductGroupCard({ group, defaultOpen = false }: { group: Produc
                             <td className="whitespace-nowrap px-3 py-2.5 align-top font-mono text-[13px] font-semibold text-brand-dark sm:px-3.5 sm:align-middle">
                               <Link
                                 to={`/shop/${encodeURIComponent(p.code)}`}
-                                className="underline-offset-2 hover:underline"
+                                className="-mx-1.5 -my-2 inline-block px-1.5 py-2 underline-offset-2 hover:underline"
                               >
                                 {p.code}
                               </Link>
@@ -121,7 +121,7 @@ export function ProductGroupCard({ group, defaultOpen = false }: { group: Produc
                               <button
                                 type="button"
                                 onClick={() => cart.add(p.code)}
-                                className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                                className={`inline-grid h-9 w-9 place-items-center rounded-full border text-sm font-semibold transition ${
                                   inCart
                                     ? "border-brand bg-brand text-white"
                                     : "border-ink/15 text-ink-soft hover:border-brand hover:text-brand"
