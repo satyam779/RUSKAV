@@ -1320,6 +1320,14 @@ type OrderRow = {
   total: number | string;
   currency: string;
   created_at: string;
+  user_id: string | null;
+
+  quoted_amount: number | string | null;
+  quoted_currency: string | null;
+  quote_notes: string | null;
+  quoted_at: string | null;
+  granted_tier: string | null;
+
   order_items: {
     product_code: string;
     product_name: string;
@@ -1337,6 +1345,7 @@ const STATUS_TONE: Record<string, "good" | "brand" | "warn" | "neutral"> = {
 };
 
 function OrdersTab() {
+  const { tiers } = useTiers();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1362,6 +1371,9 @@ function OrdersTab() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const patchRow = (id: string, patch: Partial<OrderRow>) =>
+    setOrders((list) => list.map((o) => (o.id === id ? { ...o, ...patch } : o)));
 
   const setStatus = async (order: OrderRow, status: string) => {
     if (!supabase) return;
@@ -1470,6 +1482,25 @@ function OrdersTab() {
                       <dt className={label}>Type</dt>
                       <dd className="text-ink">{o.kind === "payment" ? "Online payment" : "Enquiry"}</dd>
                     </div>
+                    {o.granted_tier && (
+                      <div>
+                        <dt className={label}>Band granted</dt>
+                        <dd className="font-semibold text-brand-dark">
+                          {tierLabel(tiers, o.granted_tier)}
+                        </dd>
+                      </div>
+                    )}
+                    {o.quoted_amount !== null && o.quoted_amount !== undefined && (
+                      <div>
+                        <dt className={label}>Quoted</dt>
+                        <dd className="font-semibold text-ink">
+                          {formatMoney(
+                            Number(o.quoted_amount),
+                            o.quoted_currency ?? o.currency ?? "INR"
+                          )}
+                        </dd>
+                      </div>
+                    )}
                   </dl>
 
                   {o.notes && (
@@ -1504,6 +1535,13 @@ function OrdersTab() {
                       ))}
                     </tbody>
                   </table>
+
+                  <QuotePanel
+                    row={o}
+                    table="orders"
+                    tiers={tiers}
+                    onSaved={(patch) => patchRow(o.id, patch)}
+                  />
 
                   <div className="mt-5 flex flex-wrap items-center gap-2">
                     <span className={label}>Mark as</span>
@@ -1587,23 +1625,49 @@ const CHANNEL_LABEL: Record<string, string> = {
 };
 
 /**
- * Pricing an enquiry.
+ * The columns a quote is written into. Enquiries and orders both carry them,
+ * because an enquiry-kind order is the same conversation arriving with line
+ * items attached and wants the same answer.
+ */
+type QuotableRow = {
+  id: string;
+  reference: string;
+  user_id: string | null;
+  quoted_amount: number | string | null;
+  quote_notes: string | null;
+  quoted_at: string | null;
+  granted_tier: string | null;
+};
+
+type QuotePatch = Pick<
+  QuotableRow,
+  "quoted_amount" | "quote_notes" | "granted_tier" | "quoted_at"
+> & { status: string };
+
+/**
+ * Pricing an enquiry or an order.
  *
  * The office's answer used to live entirely in whatever email they sent back,
  * which meant the dashboard could tell you an enquiry had been "replied" to
  * but not what was promised. This records the number, the note it went out
- * with, and — when the enquiry was a dealer application — the band the account
- * was actually moved onto.
+ * with, and - when the sender was applying to buy at trade - the band the
+ * account was actually moved onto.
+ *
+ * `table` is the only thing that differs between the two desks: same columns,
+ * same write, same "quoted" status at the end of it.
  */
 function QuotePanel({
   row,
+  table,
   tiers,
   onSaved,
 }: {
-  row: EnquiryRow;
+  row: QuotableRow;
+  table: "enquiries" | "orders";
   tiers: TierOption[];
-  onSaved: (patch: Partial<EnquiryRow>) => void;
+  onSaved: (patch: QuotePatch) => void;
 }) {
+  const noun = table === "orders" ? "order" : "enquiry";
   const [amount, setAmount] = useState(
     row.quoted_amount === null || row.quoted_amount === undefined ? "" : String(row.quoted_amount)
   );
@@ -1625,7 +1689,7 @@ function QuotePanel({
       return setError("That quoted amount isn't a number.");
     }
 
-    const patch = {
+    const patch: QuotePatch = {
       quoted_amount: parsed,
       quote_notes: notes.trim() || null,
       granted_tier: grant || null,
@@ -1633,7 +1697,7 @@ function QuotePanel({
       status: "quoted",
     };
 
-    const { error: err } = await supabase.from("enquiries").update(patch).eq("id", row.id);
+    const { error: err } = await supabase.from(table).update(patch).eq("id", row.id);
     if (err) {
       setBusy(false);
       return setError(describeWriteError(err));
@@ -1644,7 +1708,7 @@ function QuotePanel({
     // quote that saved while the band silently did not is the worst outcome.
     if (grant && row.user_id) {
       try {
-        await setCustomerTier(row.user_id, grant, `Granted on enquiry ${row.reference}`);
+        await setCustomerTier(row.user_id, grant, `Granted on ${noun} ${row.reference}`);
         setDone(`Saved, and the account is now on ${tierLabel(tiers, grant)}.`);
       } catch (err) {
         setError(
@@ -1656,7 +1720,7 @@ function QuotePanel({
       }
     } else if (grant && !row.user_id) {
       setDone(
-        "Quote saved. This enquiry has no account attached, so the band could not be applied. Set it on the Customers tab once they sign up."
+        `Quote saved. This ${noun} has no account attached, so the band could not be applied. Set it on the Customers tab once they sign up.`
       );
     } else {
       setDone("Quote saved.");
@@ -1669,7 +1733,7 @@ function QuotePanel({
   return (
     <div className="mt-5 rounded-2xl border border-brand/20 bg-brand-tint/60 p-4">
       <p className="text-[11px] font-bold uppercase tracking-wider text-brand-dark">
-        Quote this enquiry
+        Quote this {noun}
       </p>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -2021,6 +2085,7 @@ function EnquiriesTab() {
 
                   <QuotePanel
                     row={e}
+                    table="enquiries"
                     tiers={tiers}
                     onSaved={(patch) => patchRow(e.id, patch)}
                   />

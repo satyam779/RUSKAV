@@ -536,6 +536,20 @@ alter table public.enquiries add column if not exists granted_tier    text;
 
 create index if not exists enquiries_status_idx on public.enquiries (status, created_at desc);
 
+-- =========================================================== orders: quoting
+-- An enquiry-kind order is the same request for a price, arriving with line
+-- items attached, so the office's answer is recorded the same way. `total` is
+-- what the basket came to at list; `quoted_amount` is what was actually
+-- promised, which is the number the customer will hold you to.
+alter table public.orders add column if not exists quoted_amount   numeric;
+alter table public.orders add column if not exists quoted_currency text default 'INR';
+alter table public.orders add column if not exists quote_notes     text;
+alter table public.orders add column if not exists quoted_at       timestamptz;
+-- Set when quoting also moved the account onto a band.
+alter table public.orders add column if not exists granted_tier    text;
+
+create index if not exists orders_status_idx on public.orders (status, created_at desc);
+
 -- =============================================== what a customer can read back
 -- The dashboard could quote an enquiry, and the customer had no way to see the
 -- quote: `enquiries` and `orders` were admin-read-only, so the account page had
